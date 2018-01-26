@@ -1,28 +1,26 @@
 #include "ndtpso_slam/ndtframe.h"
+#include "ndtpso_slam/core.h"
+//#include "ndtpso_slam/particle.h"
 
-bool operator==(const TransformParams &left, const TransformParams &right)
-{
-    return (left.x == right.x) && (left.y == right.y) && (left.theta == right.theta);
-}
-
-
-NdtFrame::NdtFrame(TransformParams trans, uint16_t width, uint16_t height, double cell_side):
-    _trans(trans), _cell_side(cell_side), width(width), height(height)
+NdtFrame::NdtFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_side)
+    : _trans(trans)
+    , _cell_side(cell_side)
+    , width(width)
+    , height(height)
 {
     this->built = false;
-    this->widthNumOfCells = uint16_t(floor(width / cell_side));
-    this->heightNumOfCells = uint16_t(floor(height / cell_side));
+    this->widthNumOfCells = uint16_t(ceil(width / cell_side));
+    this->heightNumOfCells = uint16_t(ceil(height / cell_side));
     this->numOfCells = widthNumOfCells * heightNumOfCells;
     this->cells = vector<NdtCell>(this->numOfCells);
 }
 
-
-void NdtFrame::print() {
+void NdtFrame::print()
+{
     for (unsigned short i = 0; i < this->numOfCells; ++i) {
         this->cells[i].print(i);
     }
 }
-
 
 void NdtFrame::build()
 {
@@ -38,11 +36,11 @@ void NdtFrame::build()
     this->built = true;
 }
 
-
-// Initialize the cell from laser data according to the device sensibility and the minimum angle
-void NdtFrame::transform(TransformParams trans)
+// Initialize the cell from laser data according to the device sensibility and
+// the minimum angle
+void NdtFrame::transform(Vector3d trans)
 {
-    if (trans.x != 0. && trans.y != 0. && trans.theta != 0.) {
+    if (!trans.isZero(1e-6)) {
         vector<NdtCell>* old_cells = &this->cells;
 
         this->cells = vector<NdtCell>(this->numOfCells);
@@ -56,26 +54,28 @@ void NdtFrame::transform(TransformParams trans)
             }
         }
 
+        delete old_cells;
+
         this->built = false;
     }
 }
 
-
-void NdtFrame::loadLaser(vector<double> laser_data, double min_angle, double max_angle)
+void NdtFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
 {
     unsigned short n = static_cast<unsigned short>(laser_data.size());
 
-    double sensibility = (max_angle - min_angle) / (n - 1.); // Caclulate the sensor sensibility
+    float sensibility = (max_angle - min_angle) / (n - 1.); // Caclulate the sensor sensibility
 
     // Define a function 'f' to do transformation if needed
-    Vector2d (*f)(Vector2d, TransformParams) = NULL;
+    Vector2d (*f)(Vector2d, Vector3d) = NULL;
 
-    if (this->_trans.x != 0. && this->_trans.y != 0. && this->_trans.theta != 0.)
+    if (!this->_trans.isZero(1e-6))
         f = &transform_point;
 
-    double theta;
+    float theta;
 
-    // For each element in the laser vector, get his index (i) and it's corresponding (theta)
+    // For each element in the laser vector, get his index (i) and it's
+    // corresponding (theta)
     // according to the sensibility and the minimum angle
     for (unsigned short i = 0; i < n; ++i) {
         theta = INDEX_TO_ANGLE(i, sensibility, min_angle);
@@ -88,20 +88,27 @@ void NdtFrame::loadLaser(vector<double> laser_data, double min_angle, double max
     }
 }
 
+void NdtFrame::update(Vector3d trans, NdtFrame* const new_frame)
+{
+    for (unsigned int i = 0; i < new_frame->cells.size(); ++i) {
+        if (new_frame->cells[i].created) {
+            for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
+                Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
+                this->addPoint(point);
+            }
+        }
+    }
+}
 
+// TODO: Review me
 // Add the given point 'pt' to it's corresponding cell
-void NdtFrame::addPoint(Vector2d &point)
+void NdtFrame::addPoint(Vector2d& point)
 {
     // Get the cell index in the list
     int cell_index = this->getCellIndex(point);
 
     // If the point in contained in the frame borders and it's not at the origin
     if (cell_index != -1) {
-        // If the cell is not created yet (cells table created with 'calloc'), just create it
-//        if (!(this->cells[static_cast<unsigned int>(cell_index)].created)) {
-//            this->cells[static_cast<unsigned int>(cell_index)] = NdtCell();
-//        }
-
         // And then, append the point to its cell points list
         this->cells[static_cast<unsigned int>(cell_index)].addPoint(point);
 
@@ -109,10 +116,27 @@ void NdtFrame::addPoint(Vector2d &point)
     }
 }
 
-//volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**);
+// volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**);
 
-//def score(trans, ndt_frame_ref, ndt_frame_new):
-double cost(TransformParams trans, NdtFrame * const ref_frame, NdtFrame * const new_frame)
+/* FIXME: Find a better implementation (negative values) */
+int NdtFrame::getCellIndex(Vector2d point)
+{
+    // If the point in contained in the frame borders and it's not at the origin
+    if ((point[0] >= 0)
+        && (point[0] < this->width)
+        && (point[1] > (-this->height / 2.))
+        && (point[1] < (this->height / 2.))
+        && ((point[0] > LASER_IGNORE_EPSILON) || (point[1] > LASER_IGNORE_EPSILON))) {
+        return static_cast<int>(floor(point[0] / this->_cell_side))
+            + static_cast<int>(this->widthNumOfCells * (floor(((point[1] + (this->height / 2.)) / this->_cell_side))));
+    } else {
+        return -1;
+    }
+}
+
+// TODO: Test the cost function, (why it doesn't give the same value as the
+// python implementation?!)
+double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const new_frame)
 {
     if (!ref_frame->built)
         ref_frame->build();
@@ -125,51 +149,18 @@ double cost(TransformParams trans, NdtFrame * const ref_frame, NdtFrame * const 
             int index_in_ref_frame = ref_frame->getCellIndex(point);
 
             if ((index_in_ref_frame != -1) && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].isBuilt) {
-                double nd = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].normalDistribution(point);
-//              assert (1. >= nd || nd >= 0.);
-                trans_cost -= static_cast<double>(nd);
+                double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
+                                               .normalDistribution(point);
+                assert(1. >= point_probability || point_probability >= 0.);
+                trans_cost -= static_cast<double>(point_probability);
             }
         }
     }
 
     return trans_cost;
 }
-//    # The score function, return the negative of score to be used in optimization
-//    if DEBUG: print('FUNC:: Trans -> ', trans)
-//    if not ndt_frame_ref.built:
-//        raise Exception("ndt_frame_ref must be built, call it's build() method before optimize")
 
-//    scr = 0 # The score!
-
-//    for key in ndt_frame_new.cell: # For each cell origin (key) in the new frame, do --->
-//        for pt in ndt_frame_new.cell[key].points: # For each point in the new frame --->
-//            point  = transform(pt, trans)
-//            origin = origin_at(point, ndt_frame_ref.cell_side)
-
-//            # Check if this cell origin exist in the reference frame and --->
-//            # And if the cell in the reference frame is a NDT cell (have at least 3 points) --->
-//            if ndt_frame_ref.cell.get(origin) and ndt_frame_ref.cell[origin].mean is not None:
-//                q = point - ndt_frame_ref.cell[origin].mean # Calculate the q = point (in the new frame) - mean (of the same cell in the ref frame)
-//                nd = ndt_frame_ref.cell[origin].normal_distribution(point) # Calculate the probability of pt in the ref cell
-//                # if 1 < nd or nd < 0:
-//                #     print("Abnomally ND={}".format(nd)) # This will fail if the probability if greater than 1 or lesser than 0
-//                assert 1 >= nd >= 0
-//                scr -= nd # Add the negative nd to score
-//            # else:
-//            #     scr += 1 # Like returning -1 as normal distribution
-
-//    return scr # Return the score
-
-/* TEST: Find a better implementation (negative values) */
-int NdtFrame::getCellIndex(Vector2d point) {
-    // If the point in contained in the frame borders and it's not at the origin
-    if (point(0) < this->width &&
-            (-this->height / 2.) < point(1) &&
-            point(1) < (this->height / 2.) &&
-            (point(0) > LASER_IGNORE_EPSILON || point(1) > LASER_IGNORE_EPSILON)) {
-        return static_cast<int>(floor(point(0) / this->_cell_side))
-                + static_cast<int>( this->widthNumOfCells * (floor((point(1) + (this->height / 2.) / this->_cell_side))));
-    } else {
-        return -1;
-    }
+Vector3d NdtFrame::align(Vector3d initial_guess, NdtFrame* const new_frame)
+{
+    return pso_optimization(initial_guess, this, new_frame);
 }

@@ -3,20 +3,19 @@
 
 #include <eigen3/Eigen/Core>
 #include <vector>
-#include <iostream>
 
 using namespace Eigen;
-using namespace std;
+using std::vector;
 
-class NdtCell
-{
+class NdtCell {
 private:
     Matrix2d _covar, _inv_covar;
     inline void _calc_mean();
     inline void _calc_covar();
     inline void _calc_covar_inverse();
+
 public:
-//    vector<double> origin;
+    //    vector<double> origin;
     std::vector<Vector2d> points;
     Vector2d mean;
     NdtCell(std::vector<Vector2d> points = {});

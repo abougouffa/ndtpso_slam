@@ -2,18 +2,12 @@
 #include <eigen3/Eigen/Eigen>
 #include <stdio.h>
 
-using namespace Eigen;
-using namespace std;
-
-
-NdtCell::NdtCell(vector<Vector2d> points) :
-    points(points)
+NdtCell::NdtCell(vector<Vector2d> points)
+    : points(points)
 {
     this->isBuilt = false;
     this->created = false;
 }
-
-
 
 void NdtCell::print(int index)
 {
@@ -44,10 +38,10 @@ double NdtCell::normalDistribution(Vector2d point)
 {
     if (this->isBuilt) {
         Vector2d diff = point - this->mean;
-//        std::cout << ((pt_diff.transpose() * this->_inv_covar) * pt_diff) / 2. << std::endl;
+        //        std::cout << ((pt_diff.transpose() * this->_inv_covar) * pt_diff) / 2. << std::endl;
         return exp(-static_cast<double>((((diff.transpose() * this->_inv_covar) * diff))) / 2.);
     } else {
-        return -1;
+        return 0;
     }
 }
 
@@ -65,8 +59,8 @@ void NdtCell::_calc_mean()
 
 void NdtCell::_calc_covar()
 {
-    this->_covar <<     .0, .0,
-                        .0, .0;
+    this->_covar << .0, .0,
+        .0, .0;
 
     uint16_t num_pts = static_cast<uint16_t>(this->points.size());
     Vector2d tmp_pt;
@@ -83,17 +77,15 @@ void NdtCell::_calc_covar_inverse()
     Vector2d eigenvals = eigenval_solver.pseudoEigenvalueMatrix().diagonal();
     double large_val, small_val;
 
-    large_val = eigenvals[eigenvals[0] > eigenvals[1]? 0: 1];
-    small_val = eigenvals[eigenvals[0] < eigenvals[1]? 0: 1];
+    large_val = eigenvals[eigenvals[0] > eigenvals[1] ? 0 : 1];
+    small_val = eigenvals[eigenvals[0] < eigenvals[1] ? 0 : 1];
 
     if (small_val < .001 * large_val)
         large_val = .001 * large_val * large_val; // From now, the large_val hold the new determinant
     else
         large_val = this->_covar.determinant();
 
-    this->_inv_covar <<      this->_covar(1, 1) / large_val, -this->_covar(0, 1) / large_val,
-                            -this->_covar(1, 0) / large_val,  this->_covar(0, 0) / large_val;
-//    std::cout << this->_inv_covar << std::endl;
+    this->_inv_covar << this->_covar(1, 1) / large_val, -this->_covar(0, 1) / large_val,
+        -this->_covar(1, 0) / large_val, this->_covar(0, 0) / large_val;
+    //    std::cout << this->_inv_covar << std::endl;
 }
-
-
