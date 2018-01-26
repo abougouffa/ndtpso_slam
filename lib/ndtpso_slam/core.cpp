@@ -23,10 +23,9 @@ struct Particle {
 
 Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, NdtFrame* const new_frame, unsigned int iters_num)
 {
-    iters_num = 100;
     //    def pso(mean, ref_frame, new_frame, iters=25):
     double w = 1., w_damping_coef = .4, c1 = 2., c2 = 2.;
-    unsigned short num_of_particles = 70;
+    unsigned short num_of_particles = PSO_POPULATION_SIZE;
     Array3d deviation;
     deviation << .5, .2, M_PI / 10.;
 
