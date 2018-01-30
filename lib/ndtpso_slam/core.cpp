@@ -1,6 +1,7 @@
 #include "ndtpso_slam/core.h"
 #include "ndtpso_slam/ndtframe.h"
 #include <iostream>
+#include <omp.h>
 
 using std::cout;
 
@@ -45,6 +46,8 @@ Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, Ndt
     }
 
     for (unsigned int i = 0; i < iters_num; ++i) {
+        omp_set_num_threads(omp_get_max_threads());
+#pragma omp parallel for
         for (unsigned int j = 0; j < num_of_particles; ++j) {
             for (unsigned int k = 0; k < 3; ++k) {
                 Array2d random_coef = Array2d::Random().abs();
@@ -61,7 +64,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, Ndt
                 particles[j].best_cost = particles[j].cost;
                 particles[j].best_position = particles[j].position;
             }
-
+#pragma omp barrer
             if (particles[j].cost < particles[global_best_index].cost) {
                 global_best_index = j;
             }
