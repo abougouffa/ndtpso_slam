@@ -73,9 +73,9 @@ Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, Ndt
         w *= w_damping_coef;
     }
 
-    //    cout << "Blobal Best Cost ";
-    //    cout << particles[global_best_index].best_cost;
-    //    cout << std::endl;
+    cout << "Global Best Cost (PSO) ";
+    cout << particles[global_best_index].best_cost;
+    cout << std::endl;
     return particles[global_best_index].best_position;
 }
 
@@ -133,7 +133,7 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame
         omega = 1.1 - particles[global_best_index].cost / pbest_avr;
     }
 
-    cout << "Blobal Best Cost ";
+    cout << "Global Best Cost (GLIR PSO) ";
     cout << particles[global_best_index].best_cost;
     cout << std::endl;
     return particles[global_best_index].best_position;
