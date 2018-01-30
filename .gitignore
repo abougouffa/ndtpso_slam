@@ -2,4 +2,5 @@ Debug/
 Release/
 *.o
 *.user
+build
 
