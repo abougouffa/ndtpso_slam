@@ -28,7 +28,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, Ndt
     double w = 1., w_damping_coef = .4, c1 = 2., c2 = 2.;
     unsigned short num_of_particles = PSO_POPULATION_SIZE;
     Array3d deviation;
-    deviation << .5, .2, M_PI / 10.;
+    deviation << 1., 1., M_PI / 3.;
 
     //    Particle global_best(initial_guess, deviation, ref_frame, new_frame);
 
