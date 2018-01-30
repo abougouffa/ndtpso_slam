@@ -1,6 +1,9 @@
 #include "ndtpso_slam/ndtframe.h"
 #include "ndtpso_slam/core.h"
+#include <CImg.h>
 //#include "ndtpso_slam/particle.h"
+
+using namespace cimg_library;
 
 NdtFrame::NdtFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_side)
     : _trans(trans)
@@ -163,4 +166,31 @@ double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const 
 Vector3d NdtFrame::align(Vector3d initial_guess, NdtFrame* const new_frame)
 {
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS);
+}
+
+void NdtFrame::saveImage(const char* const filename, unsigned char density)
+{
+    unsigned int size_x = this->width * density, // density in "pixel per meter"
+        size_y = this->height * density,
+                 size_z = 1,
+                 numberOfColorChannels = 3;
+    unsigned char initialValue = 0;
+
+    CImg<unsigned char> image(size_x, size_y, size_z, numberOfColorChannels, initialValue);
+
+    for (unsigned int i = 0; i < this->numOfCells; ++i) {
+        for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
+            unsigned char point_color[] = { 255, 0, 0 }; // RGB
+
+            int x = static_cast<int>(this->cells[i].points[j][0] * density);
+            int y = static_cast<int>(this->cells[i].points[j][1] * density + (size_y / 2));
+
+            image.draw_circle(x, y, 2, point_color);
+            //            image.draw_point(x, y, randomColor);
+        }
+    }
+
+    char save_filename[200];
+    sprintf(save_filename, "%s-w%d-h%d-c%.2f-%dppm.png", filename, this->width, this->height, this->_cell_side, density);
+    image.save_png(save_filename, 3);
 }

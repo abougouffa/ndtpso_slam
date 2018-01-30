@@ -27,6 +27,7 @@ public:
     void build();
     inline int getCellIndex(Vector2d point);
     Vector3d align(Vector3d initial_guess, NdtFrame* const new_frame);
+    void saveImage(const char* const filename, unsigned char density = 50);
 };
 
 extern double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const new_frame);
