@@ -63,14 +63,14 @@ void NdtFrame::transform(Vector3d trans)
     }
 }
 
-void NdtFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
+void NdtFrame::loadLaser(vector<float>& laser_data, float min_angle, float max_angle)
 {
     unsigned short n = static_cast<unsigned short>(laser_data.size());
 
     float sensibility = (max_angle - min_angle) / (n - 1.); // Caclulate the sensor sensibility
 
     // Define a function 'f' to do transformation if needed
-    Vector2d (*f)(Vector2d, Vector3d) = NULL;
+    Vector2d (*f)(Vector2d&, Vector3d&) = NULL;
 
     if (!this->_trans.isZero(1e-6))
         f = &transform_point;

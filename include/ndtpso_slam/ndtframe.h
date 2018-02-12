@@ -20,7 +20,7 @@ public:
     unsigned int numOfCells;
     NdtFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0);
     void transform(Vector3d trans);
-    void loadLaser(vector<float> laser_data, float min_angle = static_cast<float>(-M_PI_2), float max_angle = static_cast<float>(M_PI_2));
+    void loadLaser(vector<float>& laser_data, float min_angle = static_cast<float>(-M_PI_2), float max_angle = static_cast<float>(M_PI_2));
     void update(Vector3d trans, NdtFrame* const new_frame);
     void addPoint(Vector2d& point);
     void print();

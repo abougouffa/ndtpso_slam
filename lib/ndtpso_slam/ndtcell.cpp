@@ -12,7 +12,7 @@ NdtCell::NdtCell(vector<Vector2d> points)
 void NdtCell::print(int index)
 {
     for (unsigned int i = 0; i < this->points.size(); ++i) {
-        printf("%d, %f, %f\n", index, this->points[i][0], this->points[i][1]);
+        printf("@%d, (%f, %f)\n", index, this->points[i][0], this->points[i][1]);
     }
 }
 
@@ -38,7 +38,6 @@ double NdtCell::normalDistribution(Vector2d point)
 {
     if (this->isBuilt) {
         Vector2d diff = point - this->mean;
-        //        std::cout << ((pt_diff.transpose() * this->_inv_covar) * pt_diff) / 2. << std::endl;
         return exp(-static_cast<double>((((diff.transpose() * this->_inv_covar) * diff))) / 2.);
     } else {
         return 0;
@@ -87,5 +86,4 @@ void NdtCell::_calc_covar_inverse()
 
     this->_inv_covar << this->_covar(1, 1) / large_val, -this->_covar(0, 1) / large_val,
         -this->_covar(1, 0) / large_val, this->_covar(0, 0) / large_val;
-    //    std::cout << this->_inv_covar << std::endl;
 }
