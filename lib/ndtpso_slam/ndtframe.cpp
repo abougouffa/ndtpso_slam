@@ -186,9 +186,10 @@ void NdtFrame::saveImage(const char* const filename, unsigned char density)
 
     CImg<unsigned char> image(size_x, size_y, size_z, numberOfColorChannels, initialValue);
 
+    unsigned char point_color[] = { 0, 255, 0 }; // RGB
+
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
-            unsigned char point_color[] = { 255, 0, 0 }; // RGB
 
             int x = static_cast<int>(this->cells[i].points[j][0] * density);
             int y = static_cast<int>(this->cells[i].points[j][1] * density + (size_y / 2));
@@ -196,6 +197,17 @@ void NdtFrame::saveImage(const char* const filename, unsigned char density)
             image.draw_circle(x, y, 2, point_color);
             //            image.draw_point(x, y, randomColor);
         }
+    }
+
+    point_color[0] = 255;
+    point_color[1] = 0;
+
+    for (unsigned i = 0; i < this->_poses.size(); ++i) {
+        int x = static_cast<int>(this->_poses[i][0] * density);
+        int y = static_cast<int>(this->_poses[i][1] * density + (size_y / 2));
+
+        image.draw_circle(x, y, 2, point_color);
+        //        image.draw_arrow(x, y, int(x * cos(_poses[i][2])), int(y * sin(_poses[i][2])), point_color);
     }
 
     char save_filename[200];
