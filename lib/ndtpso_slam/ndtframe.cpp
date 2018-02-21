@@ -103,6 +103,11 @@ void NdtFrame::update(Vector3d trans, NdtFrame* const new_frame)
     }
 }
 
+void NdtFrame::addPose(Vector3d pose)
+{
+    this->_poses.push_back(pose);
+}
+
 // TODO: Review me
 // Add the given point 'pt' to it's corresponding cell
 void NdtFrame::addPoint(Vector2d& point)
