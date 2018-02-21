@@ -80,7 +80,7 @@ void NdtCell::_calc_covar_inverse()
     small_val = eigenvals[eigenvals[0] < eigenvals[1] ? 0 : 1];
 
     if (small_val < .001 * large_val)
-        large_val = .001 * large_val * large_val; // From now, the large_val hold the new determinant
+        large_val = .001 * large_val * large_val; // From now, the large_val will hold the determinant
     else
         large_val = this->_covar.determinant();
 
