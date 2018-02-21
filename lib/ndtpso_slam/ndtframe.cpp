@@ -7,9 +7,9 @@ using namespace cimg_library;
 
 NdtFrame::NdtFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_side)
     : _trans(trans)
-    , _cell_side(cell_side)
     , width(width)
     , height(height)
+    , cell_side(cell_side)
 {
     this->built = false;
     this->widthNumOfCells = uint16_t(ceil(width / cell_side));
@@ -130,8 +130,8 @@ int NdtFrame::getCellIndex(Vector2d point)
         && (point[1] > (-this->height / 2.))
         && (point[1] < (this->height / 2.))
         && ((point[0] > LASER_IGNORE_EPSILON) || (point[1] > LASER_IGNORE_EPSILON))) {
-        return static_cast<int>(floor(point[0] / this->_cell_side))
-            + static_cast<int>(this->widthNumOfCells * (floor(((point[1] + (this->height / 2.)) / this->_cell_side))));
+        return static_cast<int>(floor(point[0] / this->cell_side))
+            + static_cast<int>(this->widthNumOfCells * (floor(((point[1] + (this->height / 2.)) / this->cell_side))));
     } else {
         return -1;
     }
@@ -165,6 +165,7 @@ double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const 
 
 Vector3d NdtFrame::align(Vector3d initial_guess, NdtFrame* const new_frame)
 {
+    assert(this->cell_side == new_frame->cell_side);
     Vector3d deviation;
     deviation << 1.5, .8, 3.E-1;
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
@@ -193,6 +194,6 @@ void NdtFrame::saveImage(const char* const filename, unsigned char density)
     }
 
     char save_filename[200];
-    sprintf(save_filename, "%s-w%d-h%d-c%.2f-%dppm.png", filename, this->width, this->height, this->_cell_side, density);
+    sprintf(save_filename, "%s-w%d-h%d-c%.2f-%dppm.png", filename, this->width, this->height, this->cell_side, density);
     image.save_png(save_filename, 3);
 }
