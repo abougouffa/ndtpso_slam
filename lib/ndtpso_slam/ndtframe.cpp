@@ -165,7 +165,9 @@ double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const 
 
 Vector3d NdtFrame::align(Vector3d initial_guess, NdtFrame* const new_frame)
 {
-    return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS);
+    Vector3d deviation;
+    deviation << 1.5, .8, 3.E-1;
+    return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
 void NdtFrame::saveImage(const char* const filename, unsigned char density)
