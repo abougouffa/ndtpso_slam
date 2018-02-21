@@ -63,7 +63,7 @@ void NdtFrame::transform(Vector3d trans)
     }
 }
 
-void NdtFrame::loadLaser(vector<float>& laser_data, float min_angle, float max_angle)
+void NdtFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
 {
     unsigned short n = static_cast<unsigned short>(laser_data.size());
 
@@ -115,7 +115,7 @@ void NdtFrame::addPoint(Vector2d& point)
     // Get the cell index in the list
     int cell_index = this->getCellIndex(point);
 
-    // If the point in contained in the frame borders and it's not at the origin
+    // If the point is contained in the frame borders and it's not at the origin
     if (cell_index != -1) {
         // And then, append the point to its cell points list
         this->cells[static_cast<unsigned int>(cell_index)].addPoint(point);
