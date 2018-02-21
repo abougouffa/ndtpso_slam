@@ -85,9 +85,9 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame
 {
     //    def pso(mean, ref_frame, new_frame, iters=25):
     double omega = 1., c1 = 2., c2 = 2.;
-    unsigned short num_of_particles = PSO_POPULATION_SIZE;
-    Array3d deviation;
+    Array3d deviation, zero_devi;
     deviation << 1., 1., M_PI / 3.;
+    zero_devi << 1E-4, 1E-4, 1E-5;
 
     //    Particle global_best(initial_guess, deviation, ref_frame, new_frame);
 
@@ -96,7 +96,9 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame
     //    particles.push_back(global_best);
     unsigned int global_best_index = 0;
 
-    for (unsigned int i = 0; i < num_of_particles; ++i) {
+    particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
+
+    for (unsigned int i = 1; i < PSO_POPULATION_SIZE; ++i) {
         particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
 
         if (particles[i].cost < particles[global_best_index].cost) {
@@ -109,7 +111,7 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame
 
         //        omp_set_num_threads(omp_get_max_threads());
         //#pragma omp parallel for
-        for (unsigned int j = 0; j < num_of_particles; ++j) {
+        for (unsigned int j = 0; j < PSO_POPULATION_SIZE; ++j) {
             c1 = c2 = 1.0 + particles[global_best_index].cost / particles[j].best_cost;
             for (unsigned int k = 0; k < 3; ++k) {
                 Array2d random_coef = Array2d::Random().abs();
@@ -132,11 +134,14 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame
                 global_best_index = j;
             }
         }
-        omega = 1.1 - particles[global_best_index].cost / pbest_avr;
+        omega = 1.1 - PSO_POPULATION_SIZE * particles[global_best_index].cost / pbest_avr;
     }
 
-    cout << "Global Best Cost (GLIR PSO) ";
-    cout << particles[global_best_index].best_cost;
+    cout << "Global Best Cost (PSO) ";
+    cout << particles[global_best_index].best_cost << ": (";
+    cout << particles[global_best_index].best_position[0] << ", ";
+    cout << particles[global_best_index].best_position[1] << ", ";
+    cout << particles[global_best_index].best_position[2] << ")";
     cout << std::endl;
     return particles[global_best_index].best_position;
 }
