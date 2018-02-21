@@ -36,7 +36,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, Ndt
     particles.push_back(Particle(initial_guess.array(), zero_devi, ref_frame, new_frame));
     unsigned int global_best_index = 0;
 
-    for (unsigned int i = 0; i < PSO_POPULATION_SIZE - 1; ++i) {
+    for (unsigned int i = 1; i < PSO_POPULATION_SIZE; ++i) {
         particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
 
         if (particles[i].cost < particles[global_best_index].cost) {
