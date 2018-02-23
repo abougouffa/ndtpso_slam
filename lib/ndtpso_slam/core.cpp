@@ -1,5 +1,6 @@
 #include "ndtpso_slam/core.h"
 #include "ndtpso_slam/ndtframe.h"
+#include <cstdio>
 #include <iostream>
 #include <omp.h>
 
@@ -24,8 +25,7 @@ struct Particle {
 
 Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
 {
-    //    def pso(mean, ref_frame, new_frame, iters=25):
-    double w = 1., w_damping_coef = .4, c1 = 2., c2 = 2.;
+    double w = .8, w_damping_coef = .4, c1 = 2., c2 = 2.;
     Array3d zero_devi;
     zero_devi << 1E-4, 1E-4, 1E-5;
 
@@ -33,16 +33,19 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
     vector<Particle> particles;
 
     // Add the initial estimation as global best
-    particles.push_back(Particle(initial_guess.array(), zero_devi, ref_frame, new_frame));
-    unsigned int global_best_index = 0;
+    Particle global_best(initial_guess.array(), zero_devi, ref_frame, new_frame);
 
-    for (unsigned int i = 1; i < PSO_POPULATION_SIZE; ++i) {
+    for (unsigned int i = 0; i < PSO_POPULATION_SIZE; ++i) {
         particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
 
-        if (particles[i].cost < particles[global_best_index].cost) {
-            global_best_index = i;
+        if (particles[i].cost < global_best.best_cost) {
+            //            global_best_index = i;
+            global_best.best_cost = particles[i].best_cost;
+            global_best.best_position = particles[i].best_position;
         }
     }
+
+    int iter_n = 0;
 
     for (unsigned int i = 0; i < iters_num; ++i) {
         omp_set_num_threads(omp_get_max_threads());
@@ -52,7 +55,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
                 Array2d random_coef = Array2d::Random().abs();
                 particles[j].velocity[k] = w * particles[j].velocity[k]
                     + c1 * random_coef[0] * (particles[j].best_position[k] - particles[j].position[k])
-                    + c2 * random_coef[1] * (particles[global_best_index].position[k] - particles[j].position[k]);
+                    + c2 * random_coef[1] * (global_best.position[k] - particles[j].position[k]);
 
                 particles[j].position[k] = particles[j].position[k] + particles[j].velocity[k];
             }
@@ -64,24 +67,27 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
                 particles[j].best_position = particles[j].position;
             }
 #pragma omp critical
-            if (particles[j].cost < particles[global_best_index].cost) {
-                global_best_index = j;
+            if (particles[j].cost < global_best.best_cost) {
+                iter_n = i;
+                global_best.best_cost = particles[j].best_cost;
+                global_best.best_position = particles[j].best_position;
             }
         }
 
         w *= w_damping_coef;
     }
 
-    cout << "Global Best Cost (PSO) ";
-    cout << particles[global_best_index].best_cost << ": (";
-    cout << particles[global_best_index].best_position[0] << ", ";
-    cout << particles[global_best_index].best_position[1] << ", ";
-    cout << particles[global_best_index].best_position[2] << ")";
-    cout << std::endl;
-    return particles[global_best_index].best_position;
+    printf("Global Best Cost (PSO): %03.5f \tIteration: %d\n"
+           "Pose (x, y, theta): (%04.5f, %04.5f, %02.5f)\n",
+        global_best.best_cost,
+        iter_n,
+        global_best.best_position[0],
+        global_best.best_position[1],
+        global_best.best_position[2]);
+    return global_best.best_position;
 }
 
-Vector3d glir_pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, NdtFrame* const new_frame, unsigned int iters_num)
+Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num)
 {
     //    def pso(mean, ref_frame, new_frame, iters=25):
     double omega = 1., c1 = 2., c2 = 2.;
