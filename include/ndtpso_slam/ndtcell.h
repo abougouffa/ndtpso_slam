@@ -7,7 +7,7 @@
 using namespace Eigen;
 using std::vector;
 
-class NdtCell {
+class NDTCell {
 private:
     Matrix2d _covar, _inv_covar;
     inline void _calc_mean();
@@ -18,7 +18,7 @@ public:
     //    vector<double> origin;
     std::vector<Vector2d> points;
     Vector2d mean;
-    NdtCell(std::vector<Vector2d> points = {});
+    NDTCell(std::vector<Vector2d> points = {});
     void print(int index);
     void addPoint(Vector2d point);
     bool isBuilt;

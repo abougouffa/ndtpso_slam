@@ -5,7 +5,7 @@
 
 using namespace cimg_library;
 
-NdtFrame::NdtFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_side)
+NDTFrame::NDTFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_side)
     : _trans(trans)
     , width(width)
     , height(height)
@@ -15,17 +15,17 @@ NdtFrame::NdtFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_
     this->widthNumOfCells = uint16_t(ceil(width / cell_side));
     this->heightNumOfCells = uint16_t(ceil(height / cell_side));
     this->numOfCells = widthNumOfCells * heightNumOfCells;
-    this->cells = vector<NdtCell>(this->numOfCells);
+    this->cells = vector<NDTCell>(this->numOfCells);
 }
 
-void NdtFrame::print()
+void NDTFrame::print()
 {
     for (unsigned short i = 0; i < this->numOfCells; ++i) {
         this->cells[i].print(i);
     }
 }
 
-void NdtFrame::build()
+void NDTFrame::build()
 {
     if (this->built) {
         return;
@@ -41,12 +41,12 @@ void NdtFrame::build()
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
-void NdtFrame::transform(Vector3d trans)
+void NDTFrame::transform(Vector3d trans)
 {
     if (!trans.isZero(1e-6)) {
-        vector<NdtCell>* old_cells = &this->cells;
+        vector<NDTCell>* old_cells = &this->cells;
 
-        this->cells = vector<NdtCell>(this->numOfCells);
+        this->cells = vector<NDTCell>(this->numOfCells);
 
         for (unsigned int i = 0; i < this->numOfCells; ++i) {
             if ((*old_cells)[i].created) {
@@ -63,7 +63,7 @@ void NdtFrame::transform(Vector3d trans)
     }
 }
 
-void NdtFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
+void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
 {
     unsigned short n = static_cast<unsigned short>(laser_data.size());
 
@@ -91,7 +91,7 @@ void NdtFrame::loadLaser(vector<float> laser_data, float min_angle, float max_an
     }
 }
 
-void NdtFrame::update(Vector3d trans, NdtFrame* const new_frame)
+void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 {
     for (unsigned int i = 0; i < new_frame->cells.size(); ++i) {
         if (new_frame->cells[i].created) {
@@ -103,14 +103,14 @@ void NdtFrame::update(Vector3d trans, NdtFrame* const new_frame)
     }
 }
 
-void NdtFrame::addPose(Vector3d pose)
+void NDTFrame::addPose(Vector3d pose)
 {
     this->_poses.push_back(pose);
 }
 
 // TODO: Review me
 // Add the given point 'pt' to it's corresponding cell
-void NdtFrame::addPoint(Vector2d& point)
+void NDTFrame::addPoint(Vector2d& point)
 {
     // Get the cell index in the list
     int cell_index = this->getCellIndex(point);
@@ -127,7 +127,7 @@ void NdtFrame::addPoint(Vector2d& point)
 // volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**);
 
 /* FIXME: Find a better implementation (negative values) */
-int NdtFrame::getCellIndex(Vector2d point)
+int NDTFrame::getCellIndex(Vector2d point)
 {
     // If the point in contained in the frame borders and it's not at the origin
     if ((point[0] >= 0)
@@ -144,7 +144,7 @@ int NdtFrame::getCellIndex(Vector2d point)
 
 // TODO: Test the cost function, (why it doesn't give the same value as the
 // python implementation?!)
-double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const new_frame)
+double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
 {
     if (!ref_frame->built)
         ref_frame->build();
@@ -168,7 +168,7 @@ double cost_function(Vector3d trans, NdtFrame* const ref_frame, NdtFrame* const 
     return trans_cost;
 }
 
-Vector3d NdtFrame::align(Vector3d initial_guess, NdtFrame* const new_frame)
+Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 {
     assert(this->cell_side == new_frame->cell_side);
     Vector3d deviation;
@@ -176,7 +176,7 @@ Vector3d NdtFrame::align(Vector3d initial_guess, NdtFrame* const new_frame)
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
-void NdtFrame::saveImage(const char* const filename, unsigned char density)
+void NDTFrame::saveImage(const char* const filename, unsigned char density)
 {
     unsigned int size_x = this->width * density, // density in "pixel per meter"
         size_y = this->height * density,

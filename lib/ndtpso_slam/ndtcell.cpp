@@ -2,27 +2,27 @@
 #include <eigen3/Eigen/Eigen>
 #include <stdio.h>
 
-NdtCell::NdtCell(vector<Vector2d> points)
     : points(points)
+NDTCell::NDTCell(vector<Vector2d> points)
 {
     this->isBuilt = false;
     this->created = false;
 }
 
-void NdtCell::print(int index)
+void NDTCell::print(int index)
 {
     for (unsigned int i = 0; i < this->points.size(); ++i) {
         printf("@%d, (%f, %f)\n", index, this->points[i][0], this->points[i][1]);
     }
 }
 
-void NdtCell::addPoint(Vector2d point)
+void NDTCell::addPoint(Vector2d point)
 {
     this->points.push_back(point);
     this->created = true;
 }
 
-bool NdtCell::build()
+bool NDTCell::build()
 {
     if (this->points.size() > 2) {
         this->_calc_mean();
@@ -34,7 +34,7 @@ bool NdtCell::build()
     return this->isBuilt;
 }
 
-double NdtCell::normalDistribution(Vector2d point)
+double NDTCell::normalDistribution(Vector2d point)
 {
     if (this->isBuilt) {
         Vector2d diff = point - this->mean;

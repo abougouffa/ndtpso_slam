@@ -10,7 +10,7 @@ struct Particle {
     double best_cost;
     double cost;
 
-    Particle(Array3d mean, Array3d deviation, NdtFrame* const ref_frame, NdtFrame* const new_frame)
+    Particle(Array3d mean, Array3d deviation, NDTFrame* const ref_frame, NDTFrame* const new_frame)
     {
         position = mean + (Array3d::Random() * deviation); // Randomly place the particles according to mean and deviation
         velocity << 0, 0, 0;
@@ -22,7 +22,7 @@ struct Particle {
     }
 };
 
-Vector3d pso_optimization(Vector3d initial_guess, NdtFrame* const ref_frame, NdtFrame* const new_frame, unsigned int iters_num, Array3d deviation)
+Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
 {
     //    def pso(mean, ref_frame, new_frame, iters=25):
     double w = 1., w_damping_coef = .4, c1 = 2., c2 = 2.;
