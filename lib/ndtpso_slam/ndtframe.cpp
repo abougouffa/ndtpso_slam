@@ -27,9 +27,9 @@ void NDTFrame::print()
 
 void NDTFrame::build()
 {
-    if (this->built) {
-        return;
-    }
+    //    if (this->built) {
+    //        return;
+    //    }
 
     for (unsigned short i = 0; i < this->numOfCells; ++i) {
         if (this->cells[i].created)
@@ -65,6 +65,7 @@ void NDTFrame::transform(Vector3d trans)
 
 void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
 {
+    this->built = false;
     unsigned short n = static_cast<unsigned short>(laser_data.size());
 
     float sensibility = (max_angle - min_angle) / (n - 1.); // Caclulate the sensor sensibility
@@ -93,6 +94,8 @@ void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_an
 
 void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 {
+    this->built = false; // Set 'built' flag to false to rebuild the cell if needed
+
     for (unsigned int i = 0; i < new_frame->cells.size(); ++i) {
         if (new_frame->cells[i].created) {
             for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
@@ -106,6 +109,12 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 void NDTFrame::addPose(Vector3d pose)
 {
     this->_poses.push_back(pose);
+}
+
+void NDTFrame::resetPoints()
+{
+    for (unsigned int i = 0; i < this->cells.size(); ++i)
+        this->cells[i].resetPoints();
 }
 
 // TODO: Review me
@@ -130,13 +139,16 @@ void NDTFrame::addPoint(Vector2d& point)
 int NDTFrame::getCellIndex(Vector2d point)
 {
     // If the point in contained in the frame borders and it's not at the origin
-    if ((point[0] >= 0)
-        && (point[0] < this->width)
+    if ((point[0] > (-this->width / 2.))
+        && (point[0] < (this->width / 2.))
         && (point[1] > (-this->height / 2.))
         && (point[1] < (this->height / 2.))
-        && ((point[0] > LASER_IGNORE_EPSILON) || (point[1] > LASER_IGNORE_EPSILON))) {
-        return static_cast<int>(floor(point[0] / this->cell_side))
-            + static_cast<int>(this->widthNumOfCells * (floor(((point[1] + (this->height / 2.)) / this->cell_side))));
+        && ((point[0] > LASER_IGNORE_EPSILON)
+               || (point[1] > LASER_IGNORE_EPSILON)
+               || (point[0] < -LASER_IGNORE_EPSILON)
+               || (point[1] < -LASER_IGNORE_EPSILON))) {
+        return static_cast<int>(floor((point[0] + (this->width / 2.)) / this->cell_side)
+            + this->widthNumOfCells * (floor((point[1] + (this->height / 2.)) / this->cell_side)));
     } else {
         return -1;
     }
@@ -156,7 +168,7 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
             Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
             int index_in_ref_frame = ref_frame->getCellIndex(point);
 
-            if ((index_in_ref_frame != -1) && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].isBuilt) {
+            if ((index_in_ref_frame != -1) && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
                 double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
                                                .normalDistribution(point);
                 assert(1. >= point_probability || point_probability >= 0.);
@@ -172,7 +184,7 @@ Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 {
     assert(this->cell_side == new_frame->cell_side);
     Vector3d deviation;
-    deviation << 1.5, .8, 3.E-1;
+    deviation << 1., .5, 3.1415E-2;
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
@@ -191,10 +203,10 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
 
-            int x = static_cast<int>(this->cells[i].points[j][0] * density);
-            int y = static_cast<int>(this->cells[i].points[j][1] * density + (size_y / 2));
+            int x = (size_y / 2) + static_cast<int>(this->cells[i].points[j][0] * density);
+            int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j][1] * density);
 
-            image.draw_circle(x, y, 2, point_color);
+            image.draw_circle(x, y, 1, point_color);
             //            image.draw_point(x, y, randomColor);
         }
     }
@@ -203,14 +215,16 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
     point_color[1] = 0;
 
     for (unsigned i = 0; i < this->_poses.size(); ++i) {
-        int x = static_cast<int>(this->_poses[i][0] * density);
-        int y = static_cast<int>(this->_poses[i][1] * density + (size_y / 2));
+        int x = (size_y / 2) + static_cast<int>(this->_poses[i][0] * density);
+        int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
 
-        image.draw_circle(x, y, 2, point_color);
+        image.draw_circle(x, y, 1, point_color);
         //        image.draw_arrow(x, y, int(x * cos(_poses[i][2])), int(y * sin(_poses[i][2])), point_color);
     }
 
     char save_filename[200];
-    sprintf(save_filename, "%s-w%d-h%d-c%.2f-%dppm.png", filename, this->width, this->height, this->cell_side, density);
+    sprintf(save_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
+        filename, NDT_WINDOW_SIZE, PSO_POPULATION_SIZE, PSO_ITERATIONS,
+        this->width, this->height, this->cell_side, density);
     image.save_png(save_filename, 3);
 }

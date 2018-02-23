@@ -30,6 +30,7 @@ public:
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
     void saveImage(const char* const filename, unsigned char density = 50);
     void addPose(Vector3d pose);
+    void resetPoints();
 };
 
 extern double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame);
