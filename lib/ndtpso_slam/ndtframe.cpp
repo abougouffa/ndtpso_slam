@@ -20,7 +20,7 @@ NDTFrame::NDTFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_
 
 void NDTFrame::print()
 {
-    for (unsigned short i = 0; i < this->numOfCells; ++i) {
+    for (unsigned int i = 0; i < this->numOfCells; ++i) {
         this->cells[i].print(i);
     }
 }
@@ -31,7 +31,7 @@ void NDTFrame::build()
     //        return;
     //    }
 
-    for (unsigned short i = 0; i < this->numOfCells; ++i) {
+    for (unsigned int i = 0; i < this->numOfCells; ++i) {
         if (this->cells[i].created)
             this->cells[i].build();
     }
@@ -50,7 +50,7 @@ void NDTFrame::transform(Vector3d trans)
 
         for (unsigned int i = 0; i < this->numOfCells; ++i) {
             if ((*old_cells)[i].created) {
-                for (unsigned short j = 0; j < this->cells[i].points.size(); ++j) {
+                for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
                     Vector2d new_point = transform_point(this->cells[i].points[j], trans);
                     this->addPoint(new_point);
                 }
@@ -66,7 +66,7 @@ void NDTFrame::transform(Vector3d trans)
 void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle, float angle_increment)
 {
     this->built = false;
-    unsigned short n = static_cast<unsigned short>(laser_data.size());
+    unsigned int n = static_cast<unsigned int>(laser_data.size());
 
     float sensibility = (max_angle - min_angle) / (n - 1.); // Caclulate the sensor sensibility
 
@@ -81,8 +81,8 @@ void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_an
     // For each element in the laser vector, get his index (i) and it's
     // corresponding (theta)
     // according to the sensibility and the minimum angle
-    for (unsigned short i = 0; i < n; ++i) {
         theta = INDEX_TO_ANGLE(i, sensibility, min_angle);
+    for (unsigned int i = 0; i < n; ++i) {
         Vector2d point = LASER_TO_POINT(laser_data[i], theta);
 
         if (f)
@@ -113,7 +113,8 @@ void NDTFrame::addPose(Vector3d pose)
 
 void NDTFrame::resetPoints()
 {
-    for (unsigned int i = 0; i < this->cells.size(); ++i)
+    unsigned int n = this->cells.size();
+    for (unsigned int i = 0; i < n; ++i)
         this->cells[i].resetPoints();
 }
 
