@@ -63,7 +63,7 @@ void NDTFrame::transform(Vector3d trans)
     }
 }
 
-void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle)
+void NDTFrame::loadLaser(vector<float> laser_data, float min_angle, float max_angle, float angle_increment)
 {
     this->built = false;
     unsigned short n = static_cast<unsigned short>(laser_data.size());

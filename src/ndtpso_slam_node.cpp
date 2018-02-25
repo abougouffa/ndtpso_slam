@@ -29,8 +29,7 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
     ros::Rate scan_loop_rate(2);
     auto start = std::chrono::high_resolution_clock::now();
 
-    current_frame.loadLaser(scan->ranges, scan->angle_min, scan->angle_max);
-    ref_frame.build();
+    current_frame.loadLaser(scan->ranges, scan->angle_min, scan->angle_max, scan->angle_increment);
 
     Vector3d current_trans;
 
