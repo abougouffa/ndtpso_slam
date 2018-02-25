@@ -55,7 +55,6 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
                 Array2d random_coef = Array2d::Random().abs();
                 particles[j].velocity[k] = w * particles[j].velocity[k]
                     + c1 * random_coef[0] * (particles[j].best_position[k] - particles[j].position[k])
-#warning "Changed the global best position to best position"
                     + c2 * random_coef[1] * (global_best.best_position[k] - particles[j].position[k]);
 
                 particles[j].position[k] = particles[j].position[k] + particles[j].velocity[k];
@@ -96,7 +95,7 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame
     deviation << 1., 1., M_PI / 3.;
     zero_devi << 1E-4, 1E-4, 1E-5;
 
-    //    Particle global_best(initial_guess, deviation, ref_frame, new_frame);
+    Particle global_best(initial_guess, deviation, ref_frame, new_frame);
 
     //    vector<Particle> particles(num_of_particles - 1, Particle(initial_guess.array(), deviation, ref_frame, new_frame));
     vector<Particle> particles;
