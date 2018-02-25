@@ -55,7 +55,8 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
                 Array2d random_coef = Array2d::Random().abs();
                 particles[j].velocity[k] = w * particles[j].velocity[k]
                     + c1 * random_coef[0] * (particles[j].best_position[k] - particles[j].position[k])
-                    + c2 * random_coef[1] * (global_best.position[k] - particles[j].position[k]);
+#warning "Changed the global best position to best position"
+                    + c2 * random_coef[1] * (global_best.best_position[k] - particles[j].position[k]);
 
                 particles[j].position[k] = particles[j].position[k] + particles[j].velocity[k];
             }
