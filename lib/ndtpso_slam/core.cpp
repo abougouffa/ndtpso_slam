@@ -25,7 +25,7 @@ struct Particle {
 
 Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
 {
-    double w = .8, w_damping_coef = .4, c1 = 2., c2 = 2.;
+    double w = .8, w_damping_coef = 1., c1 = 2., c2 = 2.;
     Array3d zero_devi;
     zero_devi << 1E-4, 1E-4, 1E-5;
 
