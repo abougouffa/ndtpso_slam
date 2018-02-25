@@ -14,13 +14,21 @@ using namespace Eigen;
 using std::cout;
 using std::endl;
 
+#define CELL_SIZE 1.
+//#define CELL_SIZE_SMALL .2
+
 static std::mutex matcher_mutex;
-static NDTFrame ref_frame(Vector3d::Zero(), 200, 200, 1.);
-static NDTFrame global_map(Vector3d::Zero(), 200, 200, 1.);
-static NDTFrame current_frame(Vector3d::Zero(), 20, 20, 1.);
+static NDTFrame ref_frame(Vector3d::Zero(), 200, 200, CELL_SIZE);
+static NDTFrame current_frame(Vector3d::Zero(), 50, 50, CELL_SIZE);
+static NDTFrame global_map(Vector3d::Zero(), 200, 200, CELL_SIZE);
 static Vector3d global_trans, previous_trans, trans_estimate;
 static bool first_iter;
 static geometry_msgs::PoseStamped current_pose;
+
+#ifdef CELL_SIZE_SMALL
+static NDTFrame ref_frame_small(Vector3d::Zero(), 200, 200, CELL_SIZE_SMALL);
+static NDTFrame current_frame_small(Vector3d::Zero(), 20, 20, CELL_SIZE_SMALL);
+#endif
 
 void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
@@ -31,6 +39,10 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
 
     current_frame.loadLaser(scan->ranges, scan->angle_min, scan->angle_max, scan->angle_increment);
 
+#ifdef CELL_SIZE_SMALL
+    current_frame_small.loadLaser(scan->ranges, scan->angle_min, scan->angle_max, scan->angle_increment);
+#endif
+
     Vector3d current_trans;
 
     if (first_iter) {
@@ -39,6 +51,9 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
         previous_trans << .0, .0, .0;
     } else {
         current_trans = ref_frame.align(previous_trans, &current_frame);
+#ifdef CELL_SIZE_SMALL
+        current_trans = ref_frame_small.align(current_trans, &current_frame_small);
+#endif
     }
 
     previous_trans = current_trans;
@@ -46,16 +61,17 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
     ref_frame.resetPoints();
     ref_frame.update(current_trans, &current_frame);
 
+#ifdef CELL_SIZE_SMALL
+    ref_frame_small.resetPoints();
+    ref_frame_small.update(current_trans, &current_frame_small);
+#endif
+
     if (iter_num == 0)
         global_map.update(current_trans, &current_frame);
 
     global_map.addPose(current_trans);
 
-    iter_num = (iter_num + 1) % 20;
-
-    //    char filename[200];
-    //    sprintf(filename, "globalmap-multilayers-%d", iter_num);
-    //    global_map.saveImage(filename, 100);
+    iter_num = (iter_num + 1) % 1;
 
     auto finish = std::chrono::high_resolution_clock::now();
 
@@ -64,7 +80,10 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
     std::cout << endl
               << "Elapsed time: " << elapsed.count() << " s\n";
 
-    current_frame = NDTFrame(Vector3d::Zero(), 20, 20, 1.);
+    current_frame = NDTFrame(Vector3d::Zero(), 50, 50, CELL_SIZE);
+#ifdef CELL_SIZE_SMALL
+    current_frame_small = NDTFrame(Vector3d::Zero(), 20, 20, CELL_SIZE_SMALL);
+#endif
     //    scan_loop_rate.sleep();
     matcher_mutex.unlock();
 }
@@ -78,13 +97,13 @@ int main(int argc, char** argv)
 
     ros::init(argc, argv, "ndtpso_slam");
     ros::NodeHandle nh;
-    ros::Publisher pose_pub = nh.advertise<geometry_msgs::PoseStamped>("ndtpso/pose", 1);
+    //    ros::Publisher pose_pub = nh.advertise<geometry_msgs::PoseStamped>("ndtpso/pose", 1);
     ros::Subscriber laser_sub = nh.subscribe<sensor_msgs::LaserScan>("/scan", 1, &scan_mathcher);
     ros::Rate loop_rate(10);
 
     while (ros::ok()) {
         ros::spinOnce();
-        pose_pub.publish(current_pose);
+        //        pose_pub.publish(current_pose);
         loop_rate.sleep();
     }
 
