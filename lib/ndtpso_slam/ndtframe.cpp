@@ -195,11 +195,11 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
         size_y = this->height * density,
                  size_z = 1,
                  numberOfColorChannels = 3;
-    unsigned char initialValue = 0;
+    unsigned char initialValue = 255;
 
     CImg<unsigned char> image(size_x, size_y, size_z, numberOfColorChannels, initialValue);
 
-    unsigned char point_color[] = { 0, 255, 0 }; // RGB
+    unsigned char point_color[] = { 0, 0, 0 }; // RGB
 
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
@@ -207,7 +207,7 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
             int x = (size_y / 2) + static_cast<int>(this->cells[i].points[j][0] * density);
             int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j][1] * density);
 
-            image.draw_circle(x, y, 1, point_color);
+            image.draw_point(x, y, point_color);
             //            image.draw_point(x, y, randomColor);
         }
     }
@@ -219,13 +219,13 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
         int x = (size_y / 2) + static_cast<int>(this->_poses[i][0] * density);
         int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
 
-        image.draw_circle(x, y, 1, point_color);
+        image.draw_point(x, y, point_color);
         //        image.draw_arrow(x, y, int(x * cos(_poses[i][2])), int(y * sin(_poses[i][2])), point_color);
     }
 
     char save_filename[200];
     sprintf(save_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
-        filename, NDT_WINDOW_SIZE, PSO_POPULATION_SIZE, PSO_ITERATIONS,
+        filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
         this->width, this->height, this->cell_side, density);
     image.save_png(save_filename, 3);
 }
