@@ -169,10 +169,10 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
             Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
             int index_in_ref_frame = ref_frame->getCellIndex(point);
 
-            if ((index_in_ref_frame != -1) && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
+            if ((index_in_ref_frame != -1)
+                && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
                 double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
                                                .normalDistribution(point);
-                assert(1. >= point_probability || point_probability >= 0.);
                 trans_cost -= static_cast<double>(point_probability);
             }
         }
