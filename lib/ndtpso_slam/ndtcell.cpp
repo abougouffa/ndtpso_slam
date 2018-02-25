@@ -68,7 +68,7 @@ void NDTCell::resetPoints()
 {
     this->_frame_sum << 0, 0;
     this->_points_num = 0;
-    this->points.resize(0);
+    this->points.clear();
 }
 
 void NDTCell::_calc_covar_inverse()
