@@ -10,7 +10,7 @@ using std::vector;
 using namespace Eigen;
 
 Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num = 50, Array3d deviation = { 0, 0, 0 });
-Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num = 50);
+Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num = 50, Array3d deviation = { 0, 0, 0 });
 
 // Spatial mapping T between two robot coordinate frames
 // given point (the old frame origin), and trans (x, y and theta), return the new frame origin
