@@ -1,9 +1,8 @@
 #include "ndtpso_slam/ndtframe.h"
 #include "ndtpso_slam/core.h"
-#include <CImg.h>
-//#include "ndtpso_slam/particle.h"
-
-using namespace cimg_library;
+#include <opencv/cv.hpp>
+#include <opencv/cvwimage.h>
+#include <opencv/ml.h>
 
 NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, double positive_only)
     : _trans(trans)
@@ -197,40 +196,32 @@ Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 void NDTFrame::saveImage(const char* const filename, unsigned char density)
 {
     unsigned int size_x = this->width * density, // density in "pixel per meter"
-        size_y = this->height * density,
-                 size_z = 1,
-                 numberOfColorChannels = 3;
-    unsigned char initialValue = 255;
+        size_y = this->height * density;
 
-    CImg<unsigned char> image(size_x, size_y, size_z, numberOfColorChannels, initialValue);
-
-    unsigned char point_color[] = { 0, 0, 0 }; // RGB
+    cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
+    cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
 
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
 
-            int x = (size_y / 2) + static_cast<int>(this->cells[i].points[j][0] * density);
+            int x = (size_x / 2) + static_cast<int>(this->cells[i].points[j][0] * density);
             int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j][1] * density);
 
-            image.draw_point(x, y, point_color);
-            //            image.draw_point(x, y, randomColor);
+            cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
         }
     }
 
-    point_color[0] = 255;
-    point_color[1] = 0;
-
     for (unsigned i = 0; i < this->_poses.size(); ++i) {
-        int x = (size_y / 2) + static_cast<int>(this->_poses[i][0] * density);
+        int x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);
         int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
 
-        image.draw_point(x, y, point_color);
-        //        image.draw_arrow(x, y, int(x * cos(_poses[i][2])), int(y * sin(_poses[i][2])), point_color);
+        cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
     }
 
     char save_filename[200];
     sprintf(save_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
         filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
         this->width, this->height, this->cell_side, density);
-    image.save_png(save_filename, 3);
+
+    cv::imwrite(save_filename, img);
 }
