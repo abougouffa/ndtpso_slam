@@ -52,27 +52,27 @@ void NDTFrame::build()
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
-void NDTFrame::transform(Vector3d trans)
-{
-    if (!trans.isZero(1e-6)) {
-        vector<NDTCell>* old_cells = &this->cells;
+//void NDTFrame::transform(Vector3d trans)
+//{
+//    if (!trans.isZero(1e-6)) {
+//        vector<NDTCell>* old_cells = &this->cells;
 
-        this->cells = vector<NDTCell>(this->numOfCells);
+//        this->cells = vector<NDTCell>(this->numOfCells);
 
-        for (unsigned int i = 0; i < this->numOfCells; ++i) {
-            if ((*old_cells)[i].created) {
-                for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
-                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
-                    this->addPoint(new_point);
-                }
-            }
-        }
+//        for (unsigned int i = 0; i < this->numOfCells; ++i) {
+//            if ((*old_cells)[i].created) {
+//                for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
+//                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
+//                    this->addPoint(new_point);
+//                }
+//            }
+//        }
 
-        delete old_cells;
+//        delete old_cells;
 
-        this->built = false;
-    }
-}
+//        this->built = false;
+//    }
+//}
 
 void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle, float const& max_angle, float const& angle_increment, float const& max_range)
 {
