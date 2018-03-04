@@ -60,7 +60,7 @@ double NDTCell::normalDistribution(Vector2d point)
         Vector2d diff = point - this->mean;
         return exp(-static_cast<double>((diff.transpose() * this->_inv_covar) * diff) / 2.) + .5;
     } else {
-        return -.5;
+        return 0;
     }
 }
 
