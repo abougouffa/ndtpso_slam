@@ -5,8 +5,9 @@
 
 using namespace cimg_library;
 
-NDTFrame::NDTFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_side)
+NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, double positive_only)
     : _trans(trans)
+    , _positive_only(positive_only)
     , width(width)
     , height(height)
     , cell_side(cell_side)
@@ -16,6 +17,17 @@ NDTFrame::NDTFrame(Vector3d trans, uint16_t width, uint16_t height, double cell_
     this->heightNumOfCells = uint16_t(ceil(height / cell_side));
     this->numOfCells = widthNumOfCells * heightNumOfCells;
     this->cells = vector<NDTCell>(this->numOfCells);
+
+    this->_y_min = -height / 2.;
+    this->_y_max = height / 2.;
+
+    if (positive_only) {
+        this->_x_min = -7.068583503;
+        this->_x_max = width;
+    } else {
+        this->_x_min = -width / 2.;
+        this->_x_max = width / 2.;
+    }
 }
 
 void NDTFrame::print()
@@ -136,18 +148,11 @@ void NDTFrame::addPoint(Vector2d& point)
 
 // volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**);
 
-/* FIXME: Find a better implementation (negative values) */
 int NDTFrame::getCellIndex(Vector2d point)
 {
-    // If the point in contained in the frame borders and it's not at the origin
-    if ((point[0] > (-this->width / 2.))
-        && (point[0] < (this->width / 2.))
-        && (point[1] > (-this->height / 2.))
-        && (point[1] < (this->height / 2.))
-        && ((point[0] > LASER_IGNORE_EPSILON)
-               || (point[1] > LASER_IGNORE_EPSILON)
-               || (point[0] < -LASER_IGNORE_EPSILON)
-               || (point[1] < -LASER_IGNORE_EPSILON))) {
+    // If the point in contained in the frame borders
+    if ((point[0] > this->_x_min) && (point[0] < this->_x_max)
+        && (point[1] > this->_y_min) && (point[1] < this->_y_max)) {
         return static_cast<int>(floor((point[0] + (this->width / 2.)) / this->cell_side)
             + this->widthNumOfCells * (floor((point[1] + (this->height / 2.)) / this->cell_side)));
     } else {

@@ -12,6 +12,8 @@ class NDTFrame {
 private:
     Vector3d _trans;
     vector<Vector3d> _poses;
+    bool _positive_only;
+    float _x_min, _x_max, _y_min, _y_max;
 
 public:
     uint16_t width, height, widthNumOfCells, heightNumOfCells;
@@ -19,9 +21,9 @@ public:
     bool built;
     unsigned int numOfCells;
     double cell_side;
-    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0);
     void transform(Vector3d trans);
     void loadLaser(vector<float> laser_data, float min_angle, float max_angle, float angle_increment);
+    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0, double positive_only = false);
     void update(Vector3d trans, NDTFrame* const new_frame);
     void addPoint(Vector2d& point);
     void print();
