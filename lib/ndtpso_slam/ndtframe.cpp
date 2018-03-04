@@ -196,7 +196,7 @@ Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 {
     //    assert(this->cell_side == new_frame->cell_side);
     Vector3d deviation;
-    deviation << .5, .5, M_PI / 10.; // 3.1415E-2
+    deviation << .1, .1, 3.1415E-3; // 3.1415E-2
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
