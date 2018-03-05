@@ -92,7 +92,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
     // For each element in the laser vector, get his index (i) and it's
     // corresponding (theta)
     // according to the sensibility and the minimum angle
-    for (unsigned int i = 0; i < n; /* += 3*/) {
+    for (unsigned int i = 0; i < n;) {
         if ((laser_data[i] < max_range) && (laser_data[i] > LASER_IGNORE_EPSILON)) {
             theta = INDEX_TO_ANGLE(i, angle_increment, min_angle);
             Vector2d point = LASER_TO_POINT(laser_data[i], theta);
@@ -103,10 +103,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
             this->addPoint(point);
         }
 
-        if ((i < 100) || (i > 660))
-            i += 5;
-        else
-            i++;
+        i += ((i < 140) || (i > 700)) ? 4 : 1;
     }
 }
 
