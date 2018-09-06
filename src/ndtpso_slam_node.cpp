@@ -18,14 +18,16 @@ using namespace Eigen;
 using std::cout;
 using std::endl;
 
+static FILE *log_data;
 unsigned long sec;
 
 #define CELL_SIZE 1.
+#define SIDE_M 200
 //#define CELL_SIZE_SMALL .4
 
 static std::mutex matcher_mutex;
-static NDTFrame ref_frame(Vector3d::Zero(), 200, 200, CELL_SIZE);
-static NDTFrame current_frame(Vector3d::Zero(), 80, 160, 80, true);
+static NDTFrame ref_frame(Vector3d::Zero(), SIDE_M, SIDE_M, CELL_SIZE);
+static NDTFrame current_frame(Vector3d::Zero(), SIDE_M, SIDE_M, SIDE_M, true);
 static NDTFrame global_map(Vector3d::Zero(), 200, 200, CELL_SIZE);
 static Vector3d global_trans, previous_trans, trans_estimate;
 static bool first_iter;
@@ -141,7 +143,7 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
 
     global_map.addPose(current_trans);
 
-    current_frame = NDTFrame(Vector3d::Zero(), 80, 80, 80, true);
+    current_frame = NDTFrame(Vector3d::Zero(), SIDE_M, SIDE_M, SIDE_M, true);
 #ifdef CELL_SIZE_SMALL
     current_frame_small = NDTFrame(Vector3d::Zero(), 20, 20, CELL_SIZE_SMALL);
 #endif

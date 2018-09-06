@@ -4,7 +4,7 @@
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
 
-NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, double positive_only)
+NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, bool positive_only)
     : _trans(trans)
     , _positive_only(positive_only)
     , width(width)
@@ -21,8 +21,8 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
     this->_y_max = height / 2.;
 
     if (positive_only) {
-        this->_x_min = -7.068583503;
-        this->_x_max = width;
+        this->_x_min = -7.2;
+        this->_x_max = width - 8.2;
     } else {
         this->_x_min = -width / 2.;
         this->_x_max = width / 2.;
@@ -227,5 +227,5 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
         filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
         this->width, this->height, this->cell_side, density);
 
-    cv::imwrite(save_filename, img);
+    imwrite(save_filename, img);
 }

@@ -43,7 +43,7 @@ bool NDTCell::build()
     this->_global_points_num = this->_global_points_num + this->_points_num - this->_points_nums[this->frame_id];
     this->_points_nums[this->frame_id] = this->_points_num;
 
-    if (this->points.size() > 2) {
+    if (this->_points_num > 2) { // this->points.size() > 2
         this->mean = this->_global_sum / this->_global_points_num;
         this->_calc_covar_inverse();
         this->built = true;

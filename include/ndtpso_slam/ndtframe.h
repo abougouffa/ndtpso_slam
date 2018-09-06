@@ -21,7 +21,7 @@ public:
     bool built;
     unsigned int numOfCells;
     double cell_side;
-    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0, double positive_only = false);
+    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0, bool positive_only = false);
     //    void transform(Vector3d trans);
     void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& max_angle, const float& angle_increment, const float& max_range);
     void update(Vector3d trans, NDTFrame* const new_frame);
