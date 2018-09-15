@@ -103,7 +103,7 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame
     Particle global_best(initial_guess, deviation, ref_frame, new_frame);
 
     vector<Particle> particles;
-    int iter_n = 0;
+    unsigned int iter_n = 0;
 
     particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
 

@@ -32,7 +32,7 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
 void NDTFrame::print()
 {
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
-        this->cells[i].print(i);
+        this->cells[i].print(int(i));
     }
 }
 
@@ -52,40 +52,38 @@ void NDTFrame::build()
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
-//void NDTFrame::transform(Vector3d trans)
-//{
-//    if (!trans.isZero(1e-6)) {
-//        vector<NDTCell>* old_cells = &this->cells;
+void NDTFrame::transform(Vector3d trans)
+{
+    if (!trans.isZero(1e-6)) {
+        vector<NDTCell>* old_cells = &this->cells;
 
-//        this->cells = vector<NDTCell>(this->numOfCells);
+        this->cells = vector<NDTCell>(this->numOfCells);
 
-//        for (unsigned int i = 0; i < this->numOfCells; ++i) {
-//            if ((*old_cells)[i].created) {
-//                for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
-//                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
-//                    this->addPoint(new_point);
-//                }
-//            }
-//        }
+        for (unsigned int i = 0; i < this->numOfCells; ++i)
+            if ((*old_cells)[i].created)
+                for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
+                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
+                    this->addPoint(new_point);
+                }
 
-//        delete old_cells;
+        delete old_cells;
 
-//        this->built = false;
-//    }
-//}
+        this->built = false;
+    }
+}
 
-void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle, float const& max_angle, float const& angle_increment, float const& max_range)
+void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle, float const& angle_increment, float const& max_range)
 {
     this->built = false;
     unsigned int n = static_cast<unsigned int>(laser_data.size());
 
-    // float sensibility = (max_angle - min_angle) / (n - 1.); // Caclulate the sensor sensibility
-
+#if defined(USING_TRANS) && USING_TRANS
     // Define a function 'f' to do transformation if needed
-    //    Vector2d (*f)(Vector2d&, Vector3d&) = NULL;
+    Vector2d (*f)(Vector2d&, Vector3d&) = NULL;
 
-    //    if (!this->_trans.isZero(1e-10))
-    //        f = &transform_point;
+    if (!this->_trans.isZero(1e-6))
+        f = &transform_point;
+#endif
 
     float theta;
 
@@ -94,12 +92,13 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
     // according to the sensibility and the minimum angle
     for (unsigned int i = 0; i < n; i += ((i < 140) || (i > 700)) ? 4 : 1) {
         if ((laser_data[i] < max_range) && (laser_data[i] > LASER_IGNORE_EPSILON)) {
-            theta = INDEX_TO_ANGLE(i, angle_increment, min_angle);
-            Vector2d point = LASER_TO_POINT(laser_data[i], theta);
+            theta = index_to_angle(i, angle_increment, min_angle);
+            Vector2d point = laser_to_point(laser_data[i], theta);
 
-            //        if (f)
-            //            point = f(point, this->_trans);
-
+#if defined(USING_TRANS) && USING_TRANS
+            if (f)
+                point = f(point, this->_trans);
+#endif
             this->addPoint(point);
         }
     }
@@ -109,14 +108,12 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 {
     this->built = false; // Set 'built' flag to false to rebuild the cell if needed
 
-    for (unsigned int i = 0; i < new_frame->cells.size(); ++i) {
-        if (new_frame->cells[i].created) {
+    for (unsigned int i = 0; i < new_frame->cells.size(); ++i)
+        if (new_frame->cells[i].created)
             for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
                 Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
                 this->addPoint(point);
             }
-        }
-    }
 }
 
 void NDTFrame::addPose(Vector3d pose)
@@ -126,7 +123,7 @@ void NDTFrame::addPose(Vector3d pose)
 
 void NDTFrame::resetPoints()
 {
-    unsigned int n = this->cells.size();
+    unsigned int n = unsigned(this->cells.size());
     for (unsigned int i = 0; i < n; ++i)
         this->cells[i].resetPoints();
 }
@@ -197,13 +194,13 @@ Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 
 void NDTFrame::saveImage(const char* const filename, unsigned char density)
 {
-    unsigned int size_x = this->width * density, // density in "pixel per meter"
+    int size_x = this->width * density, // density in "pixel per meter"
         size_y = this->height * density;
 
     cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
     cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
 
-    for (unsigned int i = 0; i < this->numOfCells; ++i) {
+    for (unsigned int i = 0; i < this->numOfCells; ++i)
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
 
             int x = (size_x / 2) + static_cast<int>(this->cells[i].points[j][0] * density);
@@ -211,7 +208,6 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
 
             cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
         }
-    }
 
     for (unsigned i = 0; i < this->_poses.size(); ++i) {
         int x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);

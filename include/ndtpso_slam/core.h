@@ -26,10 +26,16 @@ inline vector<double> origin_at(Vector2d& point, double& cell_side)
 };
 
 // Convert an index to angle based on "step" and "minimum angle" (used in laser data)
-#define INDEX_TO_ANGLE(idx, step, min_angle) (idx * step + min_angle)
+inline float index_to_angle(unsigned int idx, float step, float min_angle)
+{
+    return idx * step + min_angle;
+}
 
 // Convert from polar to cartesian coordinate, used in converting laser scans
 // TODO: Add a L parameter to x (distance from robot gravity center to laser origin)
-#define LASER_TO_POINT(r, theta) (Vector2d(r * cos(theta), r * sin(theta)))
+inline Vector2d laser_to_point(float r, float theta)
+{
+    return Vector2d(double(r) * cos(double(theta)), double(r) * sin(double(theta)));
+};
 
 #endif // NDTPSO_BASE_H

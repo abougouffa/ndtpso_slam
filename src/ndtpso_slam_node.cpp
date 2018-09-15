@@ -18,12 +18,12 @@ using namespace Eigen;
 using std::cout;
 using std::endl;
 
-static FILE *log_data;
-unsigned long sec;
+static FILE* log_data;
+static unsigned long sec;
 
 #define CELL_SIZE 1.
 #define SIDE_M 200
-//#define CELL_SIZE_SMALL .4
+#define CELL_SIZE_SMALL .5
 
 static std::mutex matcher_mutex;
 static NDTFrame ref_frame(Vector3d::Zero(), SIDE_M, SIDE_M, CELL_SIZE);
@@ -35,9 +35,9 @@ static geometry_msgs::PoseStamped current_pose;
 
 //laser_geometry::LaserProjection projector_;
 //tf::TransformListener tfListener_;
-ros::Publisher pose_pub;
-ros::Publisher laser_pub;
-ros::Subscriber laser_sub;
+static ros::Publisher pose_pub;
+static ros::Publisher laser_pub;
+static ros::Subscriber laser_sub;
 
 //ros::Publisher point_cloud_publisher_;
 
@@ -53,10 +53,10 @@ void scan_mathcher(const sensor_msgs::LaserScan::ConstPtr& scan)
     //    ros::Rate scan_loop_rate(2);
     auto start = std::chrono::high_resolution_clock::now();
 
-    current_frame.loadLaser(scan->ranges, scan->angle_min, scan->angle_max, scan->angle_increment, scan->range_max);
+    current_frame.loadLaser(scan->ranges, scan->angle_min, scan->angle_increment, scan->range_max);
 
 #ifdef CELL_SIZE_SMALL
-    current_frame_small.loadLaser(scan->ranges, scan->angle_min, scan->angle_max, scan->angle_increment);
+    current_frame_small.loadLaser(scan->ranges, scan->angle_min, scan->angle_increment, scan->range_max);
 #endif
 
     Vector3d current_trans;
@@ -186,5 +186,5 @@ int main(int argc, char** argv)
     char filename[100];
     sprintf(filename, "globalmap-08%X", ros::Time::now().sec);
     global_map.saveImage(filename, 25);
-    //    printf("Map saved to file %s\n", filename);
+    printf("Map saved to file %s\n", filename);
 }
