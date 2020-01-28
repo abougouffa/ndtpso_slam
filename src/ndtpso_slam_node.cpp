@@ -33,8 +33,7 @@ static std::mutex matcher_mutex;
 static NDTFrame ref_frame(Vector3d::Zero(), 50, 50, CELL_SIZE);
 ;
 static NDTFrame* current_frame; //(Vector3d(0.650, 0.440, 0.820), SIDE_M, SIDE_M, CELL_SIZE);
-//static NDTFrame current_frame(Vector3d::Zero(), SIDE_M, SIDE_M, SIDE_M, true);
-static NDTFrame global_map(Vector3d::Zero(), 50, 50, CELL_SIZE);
+static NDTFrame global_map(Vector3d::Zero(), 25, 25, CELL_SIZE);
 static Vector3d global_trans, previous_pose, trans_estimate, initial_trans;
 static bool first_iter;
 static geometry_msgs::PoseStamped current_pub_pose, pose2;
@@ -56,9 +55,9 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 
     current_frame->loadLaser(scan->ranges, scan->angle_min, scan->angle_increment, scan->range_max);
 
-    double _, _rz;
     Vector3d current_pose;
 
+    double _, _rz;
     tf::Matrix3x3(tf::Quaternion(
                       odom->pose.pose.orientation.x,
                       odom->pose.pose.orientation.y,
@@ -76,15 +75,14 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 
     previous_pose = current_pose;
 
-    //    ref_frame.resetPoints();
+    // ref_frame.resetPoints();
     ref_frame.update(current_pose, current_frame);
 
     auto finish = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> elapsed = finish - start;
 
-    //    std::cout << endl
-    //              << "Elapsed time: " << elapsed.count() << " s\n";
+    // std::cout << endl << "Elapsed time: " << elapsed.count() << " s\n";
     printf("%.5f\n", elapsed.count());
 
     if (iter_num == 0)
@@ -138,15 +136,14 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     //    point_cloud_publisher_.publish(cloud);
 
     global_map.addPose(current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, 0.));
-    fprintf(log_data, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+    fprintf(log_data, "%d, %.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n",
+        scan->header.stamp.sec,
         current_pose[0], current_pose[1], current_pose[2],
         odom->pose.pose.position.x, odom->pose.pose.position.y, _rz);
 
     delete current_frame;
     current_frame = new NDTFrame(initial_trans, SIDE_M, SIDE_M, SIDE_M, true);
-#ifdef CELL_SIZE_SMALL
-    current_frame_small = NDTFrame(Vector3d::Zero(), 20, 20, CELL_SIZE_SMALL);
-#endif
+
     scan_loop_rate.sleep();
     matcher_mutex.unlock();
 }
@@ -176,7 +173,7 @@ int main(int argc, char** argv)
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
     sprintf(log_data_filename, "%s.csv", filename);
     log_data = fopen(log_data_filename, "w");
-    fprintf(log_data, "xP,yP,thP,xO,yO,thO\n");
+    fprintf(log_data, "t, xP, yP, thP, xO, yO, thO\n");
 
     ROS_INFO("Saving poses and odometries to \"%s\"", log_data_filename);
     ROS_INFO("scan_topic:= %s", param_scan_topic.c_str());
@@ -205,8 +202,8 @@ int main(int argc, char** argv)
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/odom", 1);
 
     typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, nav_msgs::Odometry> ApproxSyncPolicy;
-    message_filters::Synchronizer<ApproxSyncPolicy> sync(ApproxSyncPolicy(10), laser_sub, odom_sub);
-    //message_filters::TimeSynchronizer<sensor_msgs::LaserScan, nav_msgs::Odometry> sync(laser_sub, odom_sub, 10);
+    //message_filters::Synchronizer<ApproxSyncPolicy> sync(ApproxSyncPolicy(10), laser_sub, odom_sub);
+    message_filters::TimeSynchronizer<sensor_msgs::LaserScan, nav_msgs::Odometry> sync(laser_sub, odom_sub, 10);
 
     sync.registerCallback(boost::bind(&scan_mathcher, _1, _2));
 
@@ -217,6 +214,6 @@ int main(int argc, char** argv)
     ros::spin();
 
     fclose(log_data);
-    global_map.saveImage(filename, 100);
+    global_map.saveImage(filename, 250);
     cout << "Map saved to file " << filename << endl;
 }
