@@ -11,7 +11,12 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
+find_package(OpenCV)
+
+#find_package(Eigen3 REQUIRED)
+
 find_package(OpenMP)
+
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -111,7 +116,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ndtpso_slam
   CATKIN_DEPENDS eigen roscpp
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 ###########
@@ -124,6 +129,8 @@ include_directories(
   include
   lib/
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+#  ${Eigen3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -154,9 +161,8 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
   ${PROJECT_NAME}
-  pthread
-  X11
 )
 
 #############
