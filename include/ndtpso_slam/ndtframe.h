@@ -11,9 +11,10 @@ using std::vector;
 class NDTFrame {
 private:
     Vector3d _trans;
-    vector<Vector3d> _poses;
+    vector<Vector3d> _poses, _odoms;
     bool _positive_only;
     double _x_min, _x_max, _y_min, _y_max;
+    NdtPsoConfig _config;
 
 public:
     uint16_t width, height, widthNumOfCells, heightNumOfCells;
@@ -31,7 +32,7 @@ public:
     inline int getCellIndex(Vector2d point);
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
     void saveImage(const char* const filename, unsigned char density = 50);
-    void addPose(Vector3d pose);
+    void addPose(Vector3d pose, Vector3d odom = Vector3d::Zero());
     void resetPoints();
 };
 

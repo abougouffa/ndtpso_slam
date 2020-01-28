@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+
+import rospy
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
+from tf import transformations
+
+def odom_callback(data):
+    (roll, pitch, yaw) = transformations.euler_from_quaternion((data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w))
+    print("%f, %f, %f" % (data.pose.pose.position.x, data.pose.pose.position.y, yaw))
+
+rospy.init_node('odom_export_node')
+
+odom_sub = rospy.Subscriber('/odom', Odometry, odom_callback, queue_size=1)
+
+if __name__ == '__main__':
+    rospy.spin()

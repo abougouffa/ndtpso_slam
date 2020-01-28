@@ -9,18 +9,20 @@ pose_path = Path()
 odom_path = Path()
 
 def odom_callback(data):
-    global path
-    path.header = data.header
+    global odom_path
+    global odom_path_pub
+    odom_path.header = data.header
     pose = PoseStamped()
     pose.header = data.header
     pose.pose = data.pose.pose
-    path.poses.append(data)
-    path_pub.publish(path)
+    odom_path.poses.append(data.pose)
+    odom_path_pub.publish(odom_path)
 
 def pose_callback(data):
-    global path
-    path.poses.append(data)
-    path_pub.publish(path)
+    global pose_path
+    global pose_path_pub
+    pose_path.poses.append(data)
+    pose_path_pub.publish(pose_path)
 
 rospy.init_node('path_node')
 

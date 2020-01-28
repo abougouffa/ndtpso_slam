@@ -85,14 +85,17 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
         f = &transform_point;
 #endif
 
-    float theta;
+    float theta, delta_theta = 0.f;
 
     // For each element in the laser vector, get his index (i) and it's
     // corresponding (theta)
     // according to the sensibility and the minimum angle
-    for (unsigned int i = 0; i < n; i += ((i < 140) || (i > 700)) ? 4 : 1) {
+    for (unsigned int i = 0; i < n; ++i) {
         if ((laser_data[i] < max_range) && (laser_data[i] > LASER_IGNORE_EPSILON)) {
             theta = index_to_angle(i, angle_increment, min_angle);
+            //delta_theta += sinf(theta);
+
+            //if (fabsf(delta_theta) > .5f) {
             Vector2d point = laser_to_point(laser_data[i], theta);
 
 #if defined(USING_TRANS) && USING_TRANS
@@ -100,6 +103,8 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
                 point = f(point, this->_trans);
 #endif
             this->addPoint(point);
+            //    delta_theta = 0.f;
+            //}
         }
     }
 }
@@ -116,9 +121,10 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
             }
 }
 
-void NDTFrame::addPose(Vector3d pose)
+void NDTFrame::addPose(Vector3d pose, Vector3d odom)
 {
     this->_poses.push_back(pose);
+    this->_odoms.push_back(odom);
 }
 
 void NDTFrame::resetPoints()
@@ -148,9 +154,10 @@ void NDTFrame::addPoint(Vector2d& point)
 
 int NDTFrame::getCellIndex(Vector2d point)
 {
-    // If the point in contained in the frame borders
+    // If the point is contained in the frame borders
     if ((point[0] > this->_x_min) && (point[0] < this->_x_max)
         && (point[1] > this->_y_min) && (point[1] < this->_y_max)) {
+        // Then return the index of the its corresponding cell
         return static_cast<int>(floor((point[0] + (this->width / 2.)) / this->cell_side)
             + this->widthNumOfCells * (floor((point[1] + (this->height / 2.)) / this->cell_side)));
     } else {
@@ -158,8 +165,7 @@ int NDTFrame::getCellIndex(Vector2d point)
     }
 }
 
-// TODO: Test the cost function, (why it doesn't give the same value as the
-// python implementation?!)
+// TODO: Test the cost function, (why it doesn't give the same value as the python implementation?!)
 double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
 {
     if (!ref_frame->built)
@@ -214,6 +220,13 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
         int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
 
         cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
+    }
+
+    for (unsigned i = 0; i < this->_odoms.size(); ++i) {
+        int x = (size_x / 2) + static_cast<int>(this->_odoms[i][0] * density);
+        int y = (size_y / 2) - static_cast<int>(this->_odoms[i][1] * density);
+
+        cv::circle(img, cv::Point(x, y), 2, cv::Scalar(255, 0, 0));
     }
 
     char save_filename[200];

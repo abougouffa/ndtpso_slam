@@ -47,7 +47,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
         }
     }
 
-    int iter_n = 0;
+    unsigned int iter_n = 0;
     for (unsigned int i = 0; i < iters_num; ++i) {
         omp_set_num_threads(omp_get_max_threads());
 #pragma omp parallel for schedule(auto)
@@ -78,19 +78,14 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
         w *= w_damping_coef;
     }
 
-    //    printf("Global Best Cost (PSO): %03.5f \tIteration: %d\n"
-    //           "Pose (x, y, theta): (%04.5f, %04.5f, %02.5f)\n",
-    //        global_best.best_cost,
-    //        iter_n,
-    //        global_best.best_position[0],
-    //        global_best.best_position[1],
-    //        global_best.best_position[2]);
+#ifdef DEBUG
     printf("%03d,%.5f,%.5f,%.5f,%.5f,",
         iter_n,
         global_best.best_cost,
         global_best.best_position[0],
         global_best.best_position[1],
         global_best.best_position[2]);
+#endif
     return global_best.best_position;
 }
 
