@@ -1,3 +1,8 @@
 <launch>
-
+    <node name="ndtpso_slam_node" pkg="ndtpso_slam" type="ndtpso_slam_node"
+        output="screen">
+        <rosparam param="scan_topic">"/scan_back"</rosparam>
+        <rosparam param="scan_frame">"lidar_back"</rosparam>
+<!--        <remap from="~odom" to="/odom"/> -->
+    </node>
 </launch>
