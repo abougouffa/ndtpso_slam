@@ -32,7 +32,6 @@ inline float index_to_angle(unsigned int idx, float step, float min_angle)
 }
 
 // Convert from polar to cartesian coordinate, used in converting laser scans
-// TODO: Add a L parameter to x (distance from robot gravity center to laser origin)
 inline Vector2d laser_to_point(float r, float theta)
 {
     return Vector2d(double(r) * cos(double(theta)), double(r) * sin(double(theta)));

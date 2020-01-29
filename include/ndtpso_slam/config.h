@@ -2,11 +2,18 @@
 #define CONFIG_H
 
 // Default values
-#define PSO_ITERATIONS 70
-#define PSO_POPULATION_SIZE 40
 #define NDT_WINDOW_SIZE 100
 #define LASER_IGNORE_EPSILON 0.1f // Ignore points around the origin with 10cm
-#define USING_TRANS 1
+#define USING_TRANS true
+#define PREFER_FRONTAL_POINTS false // Disabled
+
+// PSO parameters
+#define PSO_ITERATIONS 70
+#define PSO_POPULATION_SIZE 40
+#define PSO_DUMPING_COEF 1.
+#define PSO_W .8
+#define PSO_C1 2.
+#define PSO_C2 2.
 
 struct NdtPsoConfig {
     int psoNumIterations;

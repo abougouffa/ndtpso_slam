@@ -20,9 +20,10 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
     this->_y_min = -height / 2.;
     this->_y_max = height / 2.;
 
+    // TODO: Needs to be generic !!
     if (positive_only) {
-        this->_x_min = -7.2;
-        this->_x_max = width - 8.2;
+        this->_x_min = -7.2; // <-- here
+        this->_x_max = width - 8.2; // <-- and here!
     } else {
         this->_x_min = -width / 2.;
         this->_x_max = width / 2.;
@@ -79,13 +80,16 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
 
 #if defined(USING_TRANS) && USING_TRANS
     // Define a function 'f' to do transformation if needed
-    Vector2d (*f)(Vector2d&, Vector3d&) = NULL;
+    Vector2d (*transform)(Vector2d&, Vector3d&) = nullptr;
 
     if (!this->_trans.isZero(1e-6))
-        f = &transform_point;
+        transform = &transform_point;
 #endif
 
-    float theta, delta_theta = 0.f;
+    float theta;
+#if defined(PREFER_FRONTAL_POINTS) && PREFER_FRONTAL_POINTS
+    float delta_theta = 0.f;
+#endif
 
     // For each element in the laser vector, get his index (i) and it's
     // corresponding (theta)
@@ -93,18 +97,22 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
     for (unsigned int i = 0; i < n; ++i) {
         if ((laser_data[i] < max_range) && (laser_data[i] > LASER_IGNORE_EPSILON)) {
             theta = index_to_angle(i, angle_increment, min_angle);
-            //delta_theta += sinf(theta);
+#if defined(PREFER_FRONTAL_POINTS) && PREFER_FRONTAL_POINTS
+            delta_theta += sinf(theta);
 
-            //if (fabsf(delta_theta) > .5f) {
-            Vector2d point = laser_to_point(laser_data[i], theta);
+            if (fabsf(delta_theta) > .5f) {
+#endif
+                Vector2d point = laser_to_point(laser_data[i], theta);
 
 #if defined(USING_TRANS) && USING_TRANS
-            if (f)
-                point = f(point, this->_trans);
+                if (transform)
+                    point = transform(point, this->_trans);
 #endif
-            this->addPoint(point);
-            //    delta_theta = 0.f;
-            //}
+                this->addPoint(point);
+#if defined(PREFER_FRONTAL_POINTS) && PREFER_FRONTAL_POINTS
+                delta_theta = 0.f;
+            }
+#endif
         }
     }
 }
@@ -123,6 +131,7 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 
 void NDTFrame::addPose(Vector3d pose, Vector3d odom)
 {
+    // Used only for saving the global map image (if any), for scan matching; there is no need for this. Useful for debug
     this->_poses.push_back(pose);
     this->_odoms.push_back(odom);
 }
@@ -134,7 +143,6 @@ void NDTFrame::resetPoints()
         this->cells[i].resetPoints();
 }
 
-// TODO: Review me
 // Add the given point 'pt' to it's corresponding cell
 void NDTFrame::addPoint(Vector2d& point)
 {
@@ -150,14 +158,14 @@ void NDTFrame::addPoint(Vector2d& point)
     }
 }
 
-// volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**);
+// volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**); // Just for fun!
 
 int NDTFrame::getCellIndex(Vector2d point)
 {
-    // If the point is contained in the frame borders
+    // If the point is contained in the FRAME borders
     if ((point[0] > this->_x_min) && (point[0] < this->_x_max)
         && (point[1] > this->_y_min) && (point[1] < this->_y_max)) {
-        // Then return the index of the its corresponding cell
+        // Then return the index of the its corresponding CELL
         return static_cast<int>(floor((point[0] + (this->width / 2.)) / this->cell_side)
             + this->widthNumOfCells * (floor((point[1] + (this->height / 2.)) / this->cell_side)));
     } else {
@@ -165,7 +173,6 @@ int NDTFrame::getCellIndex(Vector2d point)
     }
 }
 
-// TODO: Test the cost function, (why it doesn't give the same value as the python implementation?!)
 double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
 {
     if (!ref_frame->built)
@@ -173,7 +180,9 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
 
     double trans_cost = 0.;
 
+    // For all cells in the new frame
     for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
+        // Transform the points of the new frame to the reference frame, and sum thiers probabilities
         for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
             Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
             int index_in_ref_frame = ref_frame->getCellIndex(point);
@@ -192,16 +201,17 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
 
 Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 {
-    //    assert(this->cell_side == new_frame->cell_side);
-    Vector3d deviation;
-    deviation << .1, .1, 3.1415E-3; // 3.1415E-2
+    Vector3d deviation = Vector3d(.1, .1, 3.1415E-3); // Used to UNIFORMLY distribute the initial particles
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
 void NDTFrame::saveImage(const char* const filename, unsigned char density)
 {
+    // Save the points, poses & odoms to an image, useful for debugging!
     int size_x = this->width * density, // density in "pixel per meter"
         size_y = this->height * density;
+
+    int counter = 0;
 
     cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
     cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
@@ -215,18 +225,34 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
             cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
         }
 
-    for (unsigned i = 0; i < this->_poses.size(); ++i) {
-        int x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);
-        int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
-
-        cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
-    }
-
     for (unsigned i = 0; i < this->_odoms.size(); ++i) {
         int x = (size_x / 2) + static_cast<int>(this->_odoms[i][0] * density);
         int y = (size_y / 2) - static_cast<int>(this->_odoms[i][1] * density);
+        int dx = static_cast<int>(.5 * cos(-this->_odoms[i][2]) * density);
+        int dy = static_cast<int>(.5 * sin(-this->_odoms[i][2]) * density);
+
+        if (0 == counter) {
+            cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(100, 50, 0));
+        }
 
         cv::circle(img, cv::Point(x, y), 2, cv::Scalar(255, 0, 0));
+        counter = (counter + 1) % 5;
+    }
+
+    counter = 0;
+
+    for (unsigned i = 0; i < this->_poses.size(); ++i) {
+        int x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);
+        int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
+        int dx = static_cast<int>(.5 * cos(-this->_poses[i][2]) * density);
+        int dy = static_cast<int>(.5 * sin(-this->_poses[i][2]) * density);
+
+        if (0 == counter) {
+            cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(40, 40, 80));
+        }
+
+        cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
+        counter = (counter + 1) % 5;
     }
 
     char save_filename[200];
