@@ -7,8 +7,13 @@ project(ndtpso_slam)
 #include(${CMAKE_CURRENT_SOURCE_DIR}/test-build.cmake)
 #endif()
 
-cmake_minimum_required(VERSION 2.8.3)
-project(ndtpso_slam)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
