@@ -58,8 +58,8 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
             for (unsigned int k = 0; k < 3; ++k) {
                 Array2d random_coef = Array2d::Random().abs();
                 particles[j].velocity[k] = w * particles[j].velocity[k]
-                    + c1 * random_coef[0] * (particles[j].best_position[k] - particles[j].position[k])
-                    + c2 * random_coef[1] * (global_best.best_position[k] - particles[j].position[k]);
+                    + c1 * random_coef.x() * (particles[j].best_position[k] - particles[j].position[k])
+                    + c2 * random_coef.y() * (global_best.best_position[k] - particles[j].position[k]);
 
                 particles[j].position[k] = particles[j].position[k] + particles[j].velocity[k];
             }
@@ -87,9 +87,9 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
     printf("last_iter:%04d, cost:%04.5f, %04.5f, %04.5f, %04.5f\n",
         iter_n,
         global_best.best_cost,
-        global_best.best_position[0],
-        global_best.best_position[1],
-        global_best.best_position[2]);
+        global_best.best_position.x(),
+        global_best.best_position.y(),
+        global_best.best_position.z());
 #endif
     return global_best.best_position;
 }
@@ -128,8 +128,8 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame
                 Array2d random_coef = Array2d::Random().abs();
                 double best_ratio = particles[j].best_position[k] / global_best.best_position[k];
                 particles[j].velocity[k] = omega * particles[j].velocity[k]
-                    + c1 * random_coef[0] * (best_ratio * particles[j].best_position[k] - particles[j].position[k])
-                    + c2 * random_coef[1] * ((1. / best_ratio) * global_best.best_position[k] - particles[j].position[k]);
+                    + c1 * random_coef.x() * (best_ratio * particles[j].best_position[k] - particles[j].position[k])
+                    + c2 * random_coef.y() * ((1. / best_ratio) * global_best.best_position[k] - particles[j].position[k]);
 
                 particles[j].position[k] = particles[j].position[k] + particles[j].velocity[k];
             }
@@ -160,9 +160,9 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame
            "Pose (x, y, theta): (%04.5f, %04.5f, %02.5f)\n",
         global_best.best_cost,
         iter_n,
-        global_best.best_position[0],
-        global_best.best_position[1],
-        global_best.best_position[2]);
+        global_best.best_position.x(),
+        global_best.best_position.y(),
+        global_best.best_position.z());
 #endif
     return global_best.best_position;
 }

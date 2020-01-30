@@ -12,6 +12,7 @@ class NDTFrame {
 private:
     Vector3d _trans;
     vector<Vector3d> _poses, _odoms;
+    vector<unsigned int> _timestamps;
     bool _positive_only;
     double _x_min, _x_max, _y_min, _y_max;
     NdtPsoConfig _config;
@@ -32,7 +33,7 @@ public:
     inline int getCellIndex(Vector2d point);
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
     void dumpMap(const char* const filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50);
-    void addPose(Vector3d pose, Vector3d odom = Vector3d::Zero());
+    void addPose(unsigned int timestamp, Vector3d pose, Vector3d odom = Vector3d::Zero());
     void resetPoints();
 };
 

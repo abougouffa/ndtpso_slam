@@ -16,13 +16,13 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame
 // given point (the old frame origin), and trans (x, y and theta), return the new frame origin
 inline Vector2d transform_point(Vector2d& point, Vector3d& trans)
 {
-    return Vector2d(point(0) * cos(trans[2]) - point(1) * sin(trans[2]) + trans[0],
-        point(0) * sin(trans[2]) + point(1) * cos(trans[2]) + trans[1]);
+    return Vector2d(point.x() * cos(trans.z()) - point.y() * sin(trans.z()) + trans.x(),
+        point.x() * sin(trans.z()) + point.y() * cos(trans.z()) + trans.y());
 };
 
 inline vector<double> origin_at(Vector2d& point, double& cell_side)
 {
-    return { floor(point(0) / cell_side) * cell_side, floor(point(1) / cell_side) * cell_side };
+    return { floor(point.x() / cell_side) * cell_side, floor(point.y() / cell_side) * cell_side };
 };
 
 // Convert an index to angle based on "step" and "minimum angle" (used in laser data)

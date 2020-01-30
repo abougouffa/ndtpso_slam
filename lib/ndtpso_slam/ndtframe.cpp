@@ -130,9 +130,10 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
             }
 }
 
-void NDTFrame::addPose(Vector3d pose, Vector3d odom)
+void NDTFrame::addPose(unsigned int timestamp, Vector3d pose, Vector3d odom)
 {
     // Used only for saving the global map image (if any), for scan matching; there is no need for this. Useful for debug
+    this->_timestamps.push_back(timestamp);
     this->_poses.push_back(pose);
     this->_odoms.push_back(odom);
 }
@@ -164,11 +165,11 @@ void NDTFrame::addPoint(Vector2d& point)
 int NDTFrame::getCellIndex(Vector2d point)
 {
     // If the point is contained in the FRAME borders
-    if ((point[0] > this->_x_min) && (point[0] < this->_x_max)
-        && (point[1] > this->_y_min) && (point[1] < this->_y_max)) {
+    if ((point.x() > this->_x_min) && (point.x() < this->_x_max)
+        && (point.y() > this->_y_min) && (point.y() < this->_y_max)) {
         // Then return the index of the its corresponding CELL
-        return static_cast<int>(floor((point[0] + (this->width / 2.)) / this->cell_side)
-            + this->widthNumOfCells * (floor((point[1] + (this->height / 2.)) / this->cell_side)));
+        return static_cast<int>(floor((point.x() + (this->width / 2.)) / this->cell_side)
+            + this->widthNumOfCells * (floor((point.y() + (this->height / 2.)) / this->cell_side)));
     } else {
         return -1;
     }
@@ -219,7 +220,7 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
         sprintf(output_filename, "%s-poses.csv", filename);
         hndl_poses = fopen(output_filename, "w");
         if (hndl_poses)
-            fprintf(hndl_poses, "xP,yP,thP,xO,yO,thO\n");
+            fprintf(hndl_poses, "timestamp,xP,yP,thP,xO,yO,thO\n");
     }
 
     if (save_points) {
@@ -242,21 +243,21 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
     for (unsigned int i = 0; i < this->numOfCells; ++i)
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
 
-            int x = (size_x / 2) + static_cast<int>(this->cells[i].points[j][0] * density);
-            int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j][1] * density);
+            int x = (size_x / 2) + static_cast<int>(this->cells[i].points[j].x() * density);
+            int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j].y() * density);
 
             cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
 
             if (save_points) {
-                fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[j][0], this->cells[i].points[j][1]);
+                fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[j].x(), this->cells[i].points[j].y());
             }
         }
 
     for (unsigned i = 0; i < this->_odoms.size(); ++i) {
-        int x = (size_x / 2) + static_cast<int>(this->_odoms[i][0] * density);
-        int y = (size_y / 2) - static_cast<int>(this->_odoms[i][1] * density);
-        int dx = static_cast<int>(.5 * cos(-this->_odoms[i][2]) * density);
-        int dy = static_cast<int>(.5 * sin(-this->_odoms[i][2]) * density);
+        int x = (size_x / 2) + static_cast<int>(this->_odoms[i].x() * density);
+        int y = (size_y / 2) - static_cast<int>(this->_odoms[i].y() * density);
+        int dx = static_cast<int>(.5 * cos(-this->_odoms[i].z()) * density);
+        int dy = static_cast<int>(.5 * sin(-this->_odoms[i].z()) * density);
 
         if (0 == counter) {
             cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(100, 50, 0));
@@ -264,10 +265,10 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
 
         cv::circle(img, cv::Point(x, y), 2, cv::Scalar(255, 0, 0));
 
-        x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);
-        y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
-        dx = static_cast<int>(.5 * cos(-this->_poses[i][2]) * density);
-        dy = static_cast<int>(.5 * sin(-this->_poses[i][2]) * density);
+        x = (size_x / 2) + static_cast<int>(this->_poses[i].x() * density);
+        y = (size_y / 2) - static_cast<int>(this->_poses[i].y() * density);
+        dx = static_cast<int>(.5 * cos(-this->_poses[i].z()) * density);
+        dy = static_cast<int>(.5 * sin(-this->_poses[i].z()) * density);
 
         if (0 == counter) {
             cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(40, 40, 80));
@@ -278,9 +279,10 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
         counter = (counter + 1) % 5;
 
         if (save_points) {
-            fprintf(hndl_poses, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                this->_poses[i][0], this->_poses[i][1], this->_poses[i][2],
-                this->_odoms[i][0], this->_odoms[i][1], this->_odoms[i][2]);
+            fprintf(hndl_poses, "%d,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+                this->_timestamps[i],
+                this->_poses[i].x(), this->_poses[i].y(), this->_poses[i].z(),
+                this->_odoms[i].x(), this->_odoms[i].y(), this->_odoms[i].z());
         }
     }
 

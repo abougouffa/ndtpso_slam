@@ -45,7 +45,6 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     static unsigned int iter_num = 0;
 #endif
     matcher_mutex.lock();
-    ros::Rate scan_loop_rate(10);
     auto start = std::chrono::high_resolution_clock::now();
 
     current_frame->loadLaser(scan->ranges, scan->angle_min, scan->angle_increment, scan->range_max);
@@ -87,12 +86,12 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 #endif
 
     current_pub_pose.header.stamp = scan->header.stamp; // ros::Time::now();
-    current_pub_pose.header.frame_id = "base_link"; // From config,
-    current_pub_pose.pose.position.x = current_pose[0];
-    current_pub_pose.pose.position.y = current_pose[1];
+    current_pub_pose.header.frame_id = "base_link"; // From config!
+    current_pub_pose.pose.position.x = current_pose.x();
+    current_pub_pose.pose.position.y = current_pose.y();
     current_pub_pose.pose.position.z = 0;
     tf::Quaternion q_ori;
-    q_ori.setRPY(0, 0, current_pose[2]);
+    q_ori.setRPY(0, 0, current_pose.z());
     current_pub_pose.pose.orientation.x = q_ori.getX();
     current_pub_pose.pose.orientation.y = q_ori.getY();
     current_pub_pose.pose.orientation.z = q_ori.getZ();
@@ -112,13 +111,11 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
     // TODO: Add timestamp to pose, to keep track of time consistency
-    global_map->addPose(current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, _rz));
+    global_map->addPose(scan->header.stamp.sec, current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, _rz));
 #endif
 
     delete current_frame;
     current_frame = new NDTFrame(initial_trans, SIDE_M, SIDE_M, SIDE_M, true);
-
-    scan_loop_rate.sleep();
     matcher_mutex.unlock();
 }
 
@@ -138,12 +135,14 @@ int main(int argc, char** argv)
 
     ros::init(argc, argv, "ndtpso_slam");
     ros::NodeHandle nh("~");
-    std::string param_scan_topic, param_lidar_frame;
-    int param_map_size;
+    std::string param_scan_topic, param_odom_topic, param_lidar_frame;
+    int param_map_size, param_rate;
 
     nh.param<std::string>("scan_topic", param_scan_topic, "/scan_front");
+    nh.param<std::string>("odom_topic", param_lidar_frame, "/odom");
     nh.param<std::string>("scan_frame", param_lidar_frame, "lidar_front");
     nh.param("map_size", param_map_size, 25);
+    nh.param("rate", param_rate, 20); // 50ms default!
 
     char filename[256];
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
@@ -153,40 +152,41 @@ int main(int argc, char** argv)
 #endif
 
     ROS_INFO("scan_topic:= \"%s\"", param_scan_topic.c_str());
+    ROS_INFO("odom_topic:= \"%s\"", param_odom_topic.c_str());
     ROS_INFO("scan_frame:= \"%s\"", param_lidar_frame.c_str());
+    ROS_INFO("rate:= \"%d\"", param_rate);
 
     pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
     // laser_sub = nh.subscribe<sensor_msgs::LaserScan>(laser_scan_topic, 1, &scan_mathcher);
     tf_listener = new tf::TransformListener(ros::Duration(1));
 
     tf::StampedTransform transform;
-    auto _t = ros::Time(0);
 
     ROS_INFO("Waiting for tf \"base_link\" -> \"%s\"", param_lidar_frame.c_str());
-
-    while (!tf_listener->waitForTransform("base_link", param_lidar_frame, _t, ros::Duration(3)))
+    while (!tf_listener->waitForTransform("base_link", param_lidar_frame, ros::Time(0), ros::Duration(2)))
         ;
     ROS_INFO("Got a tf \"base_link\" -> \"%s\"", param_lidar_frame.c_str());
-    tf_listener->lookupTransform("base_link", param_lidar_frame, _t, transform);
+    tf_listener->lookupTransform("base_link", param_lidar_frame, ros::Time(0), transform);
 
     auto init_trans = transform.getOrigin();
     initial_trans = Vector3d(init_trans.getX(), init_trans.getY(), tf::getYaw(transform.getRotation()));
-
     current_frame = new NDTFrame(initial_trans, SIDE_M, SIDE_M, CELL_SIZE);
 
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, nav_msgs::Odometry> ApproxSyncPolicy;
     message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub(nh, param_scan_topic, 1);
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/odom", 1);
-
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan, nav_msgs::Odometry> ApproxSyncPolicy;
     message_filters::Synchronizer<ApproxSyncPolicy> sync(ApproxSyncPolicy(10), laser_sub, odom_sub);
-
     sync.registerCallback(boost::bind(&scan_mathcher, _1, _2));
 
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(10); // Rate 10Hz -> 100ms
+    // ros::spin();
 
     ROS_INFO("NDT-PSO SLAM started successfuly");
 
-    ros::spin();
+    while (ros::ok()) {
+        ros::spinOnce();
+        loop_rate.sleep(); // 100ms
+    }
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
     global_map->dumpMap(filename, true, true, true, 200);
