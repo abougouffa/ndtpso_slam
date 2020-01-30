@@ -32,7 +32,6 @@ static NDTFrame ref_frame(Vector3d::Zero(), 50, 50, CELL_SIZE);
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
 static NDTFrame* global_map;
-//static FILE* csv_poses_file;
 #endif
 
 static geometry_msgs::PoseStamped current_pub_pose, pose2;
@@ -87,8 +86,6 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     iter_num = (iter_num + 1) % 10;
 #endif
 
-    // auto current_trans = current_pose - previous_pose;
-
     current_pub_pose.header.stamp = scan->header.stamp; // ros::Time::now();
     current_pub_pose.header.frame_id = "base_link"; // From config,
     current_pub_pose.pose.position.x = current_pose[0];
@@ -114,11 +111,8 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     // br.sendTransform(tf::StampedTransform(transform, scan->header.stamp, "odom", "lidar_front"));
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
+    // TODO: Add timestamp to pose, to keep track of time consistency
     global_map->addPose(current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, _rz));
-//    fprintf(csv_poses_file, "%d, %.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n",
-//        scan->header.stamp.sec,
-//        current_pose[0], current_pose[1], current_pose[2],
-//        odom->pose.pose.position.x, odom->pose.pose.position.y, _rz);
 #endif
 
     delete current_frame;
@@ -156,11 +150,6 @@ int main(int argc, char** argv)
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
     global_map = new NDTFrame(Vector3d::Zero(), static_cast<unsigned short>(param_map_size), static_cast<unsigned short>(param_map_size), param_map_size);
-// char log_data_filename[256];
-// sprintf(log_data_filename, "%s.csv", filename);
-// csv_poses_file = fopen(log_data_filename, "w");
-// fprintf(csv_poses_file, "t, xP, yP, thP, xO, yO, thO\n");
-// ROS_INFO("Saving poses and odometries to \"%s\"", log_data_filename);
 #endif
 
     ROS_INFO("scan_topic:= \"%s\"", param_scan_topic.c_str());
@@ -200,7 +189,6 @@ int main(int argc, char** argv)
     ros::spin();
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
-    //    fclose(csv_poses_file);
     global_map->dumpMap(filename, true, true, true, 200);
     cout << "Map saved to file " << filename << endl;
 #endif
