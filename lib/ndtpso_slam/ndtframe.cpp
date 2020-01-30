@@ -1,5 +1,6 @@
 #include "ndtpso_slam/ndtframe.h"
 #include "ndtpso_slam/core.h"
+#include <cstdio>
 #include <opencv/cv.hpp>
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
@@ -205,11 +206,33 @@ Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
-void NDTFrame::saveImage(const char* const filename, unsigned char density)
+void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_points, bool save_image, short density)
 {
     // Save the points, poses & odoms to an image, useful for debugging!
     int size_x = this->width * density, // density in "pixel per meter"
         size_y = this->height * density;
+
+    FILE *hndl_poses = nullptr, *hndl_points = nullptr;
+    char output_filename[250];
+
+    if (save_poses) {
+        sprintf(output_filename, "%s-poses.csv", filename);
+        hndl_poses = fopen(output_filename, "w");
+        if (hndl_poses)
+            fprintf(hndl_poses, "xP,yP,thP,xO,yO,thO\n");
+    }
+
+    if (save_points) {
+        sprintf(output_filename, "%s-map.csv", filename);
+        hndl_points = fopen(output_filename, "w");
+        if (hndl_points)
+            fprintf(hndl_points, "x,y\n");
+    }
+
+    if ((save_poses && !hndl_poses) || (save_points && !hndl_points)) {
+        printf("%s: Cannot open files, cannot save!\n ", __func__);
+        return;
+    }
 
     int counter = 0;
 
@@ -223,6 +246,10 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
             int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j][1] * density);
 
             cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
+
+            if (save_points) {
+                fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[j][0], this->cells[i].points[j][1]);
+            }
         }
 
     for (unsigned i = 0; i < this->_odoms.size(); ++i) {
@@ -236,29 +263,38 @@ void NDTFrame::saveImage(const char* const filename, unsigned char density)
         }
 
         cv::circle(img, cv::Point(x, y), 2, cv::Scalar(255, 0, 0));
-        counter = (counter + 1) % 5;
-    }
 
-    counter = 0;
-
-    for (unsigned i = 0; i < this->_poses.size(); ++i) {
-        int x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);
-        int y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
-        int dx = static_cast<int>(.5 * cos(-this->_poses[i][2]) * density);
-        int dy = static_cast<int>(.5 * sin(-this->_poses[i][2]) * density);
+        x = (size_x / 2) + static_cast<int>(this->_poses[i][0] * density);
+        y = (size_y / 2) - static_cast<int>(this->_poses[i][1] * density);
+        dx = static_cast<int>(.5 * cos(-this->_poses[i][2]) * density);
+        dy = static_cast<int>(.5 * sin(-this->_poses[i][2]) * density);
 
         if (0 == counter) {
             cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(40, 40, 80));
         }
 
         cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
+
         counter = (counter + 1) % 5;
+
+        if (save_points) {
+            fprintf(hndl_poses, "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+                this->_poses[i][0], this->_poses[i][1], this->_poses[i][2],
+                this->_odoms[i][0], this->_odoms[i][1], this->_odoms[i][2]);
+        }
     }
 
-    char save_filename[200];
-    sprintf(save_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
-        filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
-        this->width, this->height, this->cell_side, density);
+    if (save_poses)
+        fclose(hndl_poses);
 
-    imwrite(save_filename, img);
+    if (save_points)
+        fclose(hndl_points);
+
+    if (save_image) {
+        sprintf(output_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
+            filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
+            this->width, this->height, this->cell_side, density);
+
+        imwrite(output_filename, img);
+    }
 }

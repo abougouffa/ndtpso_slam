@@ -31,7 +31,7 @@ public:
     void build();
     inline int getCellIndex(Vector2d point);
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
-    void saveImage(const char* const filename, unsigned char density = 50);
+    void dumpMap(const char* const filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50);
     void addPose(Vector3d pose, Vector3d odom = Vector3d::Zero());
     void resetPoints();
 };

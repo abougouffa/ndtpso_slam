@@ -31,8 +31,8 @@ static NDTFrame* current_frame;
 static NDTFrame ref_frame(Vector3d::Zero(), 50, 50, CELL_SIZE);
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
-static NDTFrame global_map(Vector3d::Zero(), 25, 25, CELL_SIZE);
-static FILE* csv_poses_file;
+static NDTFrame* global_map;
+//static FILE* csv_poses_file;
 #endif
 
 static geometry_msgs::PoseStamped current_pub_pose, pose2;
@@ -83,7 +83,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
     if (iter_num == 0)
-        global_map.update(current_pose, current_frame);
+        global_map->update(current_pose, current_frame);
     iter_num = (iter_num + 1) % 10;
 #endif
 
@@ -114,11 +114,11 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     // br.sendTransform(tf::StampedTransform(transform, scan->header.stamp, "odom", "lidar_front"));
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
-    global_map.addPose(current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, _rz));
-    fprintf(csv_poses_file, "%d, %.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n",
-        scan->header.stamp.sec,
-        current_pose[0], current_pose[1], current_pose[2],
-        odom->pose.pose.position.x, odom->pose.pose.position.y, _rz);
+    global_map->addPose(current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, _rz));
+//    fprintf(csv_poses_file, "%d, %.5f, %.5f, %.5f, %.5f, %.5f, %.5f\n",
+//        scan->header.stamp.sec,
+//        current_pose[0], current_pose[1], current_pose[2],
+//        odom->pose.pose.position.x, odom->pose.pose.position.y, _rz);
 #endif
 
     delete current_frame;
@@ -145,19 +145,22 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "ndtpso_slam");
     ros::NodeHandle nh("~");
     std::string param_scan_topic, param_lidar_frame;
+    int param_map_size;
 
     nh.param<std::string>("scan_topic", param_scan_topic, "/scan_front");
     nh.param<std::string>("scan_frame", param_lidar_frame, "lidar_front");
+    nh.param("map_size", param_map_size, 25);
 
     char filename[256];
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
-    char log_data_filename[256];
-    sprintf(log_data_filename, "%s.csv", filename);
-    csv_poses_file = fopen(log_data_filename, "w");
-    fprintf(csv_poses_file, "t, xP, yP, thP, xO, yO, thO\n");
-    ROS_INFO("Saving poses and odometries to \"%s\"", log_data_filename);
+    global_map = new NDTFrame(Vector3d::Zero(), static_cast<unsigned short>(param_map_size), static_cast<unsigned short>(param_map_size), param_map_size);
+// char log_data_filename[256];
+// sprintf(log_data_filename, "%s.csv", filename);
+// csv_poses_file = fopen(log_data_filename, "w");
+// fprintf(csv_poses_file, "t, xP, yP, thP, xO, yO, thO\n");
+// ROS_INFO("Saving poses and odometries to \"%s\"", log_data_filename);
 #endif
 
     ROS_INFO("scan_topic:= \"%s\"", param_scan_topic.c_str());
@@ -197,8 +200,8 @@ int main(int argc, char** argv)
     ros::spin();
 
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
-    fclose(csv_poses_file);
-    global_map.saveImage(filename, 200);
+    //    fclose(csv_poses_file);
+    global_map->dumpMap(filename, true, true, true, 200);
     cout << "Map saved to file " << filename << endl;
 #endif
 }
