@@ -12,11 +12,11 @@ struct Particle {
     double cost;
     double pbest_average;
 
-    Particle(Array3d mean, Array3d deviation, NDTFrame* const ref_frame, NDTFrame* const new_frame)
+    Particle(Array3d mean, Array3d deviation, NDTFrame* const ref_frame,
+        NDTFrame* const new_frame)
+        : position(mean + (Array3d::Random() * deviation)) /* Randomly place the particles according to the mean and the deviation */
+        , velocity(Vector3d(0., 0., 0.))
     {
-        position = mean + (Array3d::Random() * deviation); // Randomly place the particles according to the mean and the deviation
-        velocity << 0, 0, 0;
-
         cost = cost_function(position, ref_frame, new_frame);
 
         best_position = position;
