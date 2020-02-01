@@ -130,7 +130,7 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
             }
 }
 
-void NDTFrame::addPose(unsigned int timestamp, Vector3d pose, Vector3d odom)
+void NDTFrame::addPose(double timestamp, Vector3d pose, Vector3d odom)
 {
     // Used only for saving the global map image (if any), for scan matching; there is no need for this. Useful for debug
     this->_timestamps.push_back(timestamp);
@@ -279,7 +279,7 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
         counter = (counter + 1) % 5;
 
         if (save_points) {
-            fprintf(hndl_poses, "%d,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+            fprintf(hndl_poses, "%.6f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
                 this->_timestamps[i],
                 this->_poses[i].x(), this->_poses[i].y(), this->_poses[i].z(),
                 this->_odoms[i].x(), this->_odoms[i].y(), this->_odoms[i].z());

@@ -83,6 +83,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     if (iter_num == 0)
         global_map->update(current_pose, current_frame);
     iter_num = (iter_num + 1) % 10;
+    global_map->addPose(scan->header.stamp.toSec(), current_pose, Vector3d(odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation));
 #endif
 
     current_pub_pose.header.stamp = scan->header.stamp; // ros::Time::now();
