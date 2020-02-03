@@ -16,6 +16,7 @@
 #include <tf/transform_listener.h>
 
 #define SAVE_DATA_TO_FILE true
+#define SYNC_WITH_LASER_TOPIC true
 #define CELL_SIZE .4
 #define SIDE_M 200
 
