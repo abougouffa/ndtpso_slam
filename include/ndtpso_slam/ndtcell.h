@@ -16,12 +16,13 @@ private:
     inline void _calc_covar_inverse();
 
 public:
-    //    vector<double> origin;
     unsigned int frame_id;
     std::vector<Vector2d> points;
     Vector2d mean;
     NDTCell(std::vector<Vector2d> points = {});
+#if defined(DEBUG) && DEBUG
     void print(int index);
+#endif
     void addPoint(Vector2d point);
     bool built;
     bool created;

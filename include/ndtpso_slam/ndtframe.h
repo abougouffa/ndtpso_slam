@@ -28,7 +28,9 @@ public:
     void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& angle_increment, const float& max_range);
     void update(Vector3d trans, NDTFrame* const new_frame);
     void addPoint(Vector2d& point);
+#if defined(DEBUG) && DEBUG
     void print();
+#endif
     void build();
     inline int getCellIndex(Vector2d point);
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);

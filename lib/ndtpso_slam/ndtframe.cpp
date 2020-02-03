@@ -5,6 +5,32 @@
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
 
+double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
+{
+    if (!ref_frame->built)
+        ref_frame->build();
+
+    double trans_cost = 0.;
+
+    // For all cells in the new frame
+    for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
+        // Transform the points of the new frame to the reference frame, and sum thiers probabilities
+        for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
+            Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
+            int index_in_ref_frame = ref_frame->getCellIndex(point);
+
+            if ((-1 != index_in_ref_frame)
+                && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
+                double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
+                                               .normalDistribution(point);
+                trans_cost -= static_cast<double>(point_probability);
+            }
+        }
+    }
+
+    return trans_cost;
+}
+
 NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, bool positive_only)
     : _trans(trans)
     , _positive_only(positive_only)
@@ -31,12 +57,14 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
     }
 }
 
+#if defined(DEBUG) && DEBUG
 void NDTFrame::print()
 {
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         this->cells[i].print(int(i));
     }
 }
+#endif
 
 void NDTFrame::build()
 {
@@ -173,32 +201,6 @@ int NDTFrame::getCellIndex(Vector2d point)
     } else {
         return -1;
     }
-}
-
-double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
-{
-    if (!ref_frame->built)
-        ref_frame->build();
-
-    double trans_cost = 0.;
-
-    // For all cells in the new frame
-    for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
-        // Transform the points of the new frame to the reference frame, and sum thiers probabilities
-        for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
-            Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
-            int index_in_ref_frame = ref_frame->getCellIndex(point);
-
-            if ((-1 != index_in_ref_frame)
-                && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
-                double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
-                                               .normalDistribution(point);
-                trans_cost -= static_cast<double>(point_probability);
-            }
-        }
-    }
-
-    return trans_cost;
 }
 
 Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
