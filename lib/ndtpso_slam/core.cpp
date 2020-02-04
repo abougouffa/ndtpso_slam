@@ -27,7 +27,7 @@ struct Particle {
 
 Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
 {
-    double w = PSO_W, c1 = PSO_C1, c2 = PSO_C2, w_damping_coef = PSO_DUMPING_COEF;
+    double w = PSO_W, c1 = PSO_C1, c2 = PSO_C2, w_damping_coef = PSO_W_DUMPING_COEF;
     Array3d zero_devi; /* TODO: why I used an array to store a 3D vector deviation?! */
     zero_devi << 1E-4, 1E-4, 1E-5;
 

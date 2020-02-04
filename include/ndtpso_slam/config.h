@@ -10,7 +10,7 @@
 // PSO parameters
 #define PSO_ITERATIONS 70
 #define PSO_POPULATION_SIZE 40
-#define PSO_DUMPING_COEF 1.
+#define PSO_W_DUMPING_COEF 1.
 #define PSO_W .8
 #define PSO_C1 2.
 #define PSO_C2 2.
@@ -23,10 +23,10 @@ struct NdtPsoConfig {
 
     NdtPsoConfig()
     {
-        //        psoNumIterations = PSO_ITERATIONS;
-        //        psoPopulationSize = PSO_POPULATION_SIZE;
-        //        ndtWindowSize = NDT_WINDOW_SIZE;
-        //        laserIgnoreEpsilon = LASER_IGNORE_EPSILON;
+        // psoNumIterations = PSO_ITERATIONS;
+        // psoPopulationSize = PSO_POPULATION_SIZE;
+        // ndtWindowSize = NDT_WINDOW_SIZE;
+        // laserIgnoreEpsilon = LASER_IGNORE_EPSILON;
     }
 };
 
