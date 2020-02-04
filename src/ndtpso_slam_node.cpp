@@ -17,8 +17,8 @@
 #define NDTPSO_SLAM_VERSION "1.0.5"
 
 #define SAVE_DATA_TO_FILE true
-#define SYNC_WITH_LASER_TOPIC false
-#define DEFAULT_CELL_SIZE_M .4
+#define SYNC_WITH_LASER_TOPIC true
+#define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 200
 #define DEFAULT_REF_FRAME_SIZE_M 50.
 #define DEFAULT_SCAN_TOPIC "/scan_front"
@@ -36,10 +36,13 @@
 using namespace Eigen;
 using std::cout;
 using std::endl;
+static std::mutex matcher_mutex;
+static std::chrono::time_point<std::chrono::high_resolution_clock> start_time, last_call_time;
+
 static int param_frame_size;
 static double param_cell_side;
-static std::mutex matcher_mutex;
 static bool first_iter;
+static int number_of_iters = 0;
 static Vector3d global_trans, previous_pose, trans_estimate, initial_pose;
 
 static NDTFrame* current_frame;
@@ -50,7 +53,7 @@ static NDTFrame* global_map;
 #endif
 
 static ros::Publisher pose_pub;
-static ros::Subscriber laser_sub;
+static geometry_msgs::PoseStamped current_pub_pose;
 
 // The odometry is used just for the initial pose to be easily compared with our calculated pose
 void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::OdometryConstPtr& odom)
@@ -60,8 +63,8 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 #endif
     matcher_mutex.lock();
     auto start = std::chrono::high_resolution_clock::now();
+    last_call_time = start;
 
-    geometry_msgs::PoseStamped current_pub_pose;
     Vector3d current_pose;
 
     current_frame->loadLaser(scan->ranges, scan->angle_min, scan->angle_increment, scan->range_max);
@@ -78,6 +81,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
         first_iter = false;
         current_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
         previous_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
+        start_time = std::chrono::high_resolution_clock::now();
     } else {
         current_pose = ref_frame->align(previous_pose, current_frame);
     }
@@ -108,7 +112,6 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     current_pub_pose.pose.orientation.y = q_ori.getY();
     current_pub_pose.pose.orientation.z = q_ori.getZ();
     current_pub_pose.pose.orientation.w = q_ori.getW();
-    pose_pub.publish(current_pub_pose);
 
     delete current_frame;
     current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_frame_size, true);
@@ -116,7 +119,10 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
 
-    ROS_INFO("Matching finished in : %.5fs", elapsed.count());
+    ++number_of_iters;
+    std::chrono::duration<double> current_rate = last_call_time - start_time;
+
+    ROS_INFO("Average rate: %.5fHz, matching rate: %.5fs", 1.0 / (current_rate.count() / number_of_iters), 1. / elapsed.count());
     matcher_mutex.unlock();
 }
 
@@ -131,6 +137,13 @@ int main(int argc, char** argv)
     ros::NodeHandle nh("~");
 
     ROS_INFO("NDTPSO Scan Matcher v%s", NDTPSO_SLAM_VERSION);
+#pragma GCC diagnostic push
+    /* Disable the warning which says that date and time aren't reproducible
+     * => normal; it is the expected behaviour
+     */
+#pragma GCC diagnostic ignored "-Wdate-time"
+    ROS_INFO("Compiled %s at %s", __DATE__, __TIME__);
+#pragma GCC diagnostic pop
 
     std::string param_scan_topic, param_odom_topic, param_lidar_frame;
     int param_map_size, param_rate;
@@ -164,7 +177,9 @@ int main(int argc, char** argv)
     global_map = new NDTFrame(Vector3d::Zero(), static_cast<unsigned short>(param_map_size), static_cast<unsigned short>(param_map_size), param_map_size);
 #endif
 
-    pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 10);
+    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_cell_side);
+
+    pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
     tf::TransformListener tf_listener(ros::Duration(1));
     tf::StampedTransform transform;
@@ -176,7 +191,7 @@ int main(int argc, char** argv)
 
     auto init_trans = transform.getOrigin();
     initial_pose = Vector3d(init_trans.getX(), init_trans.getY(), tf::getYaw(transform.getRotation()));
-    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_cell_side);
+    current_frame->setTrans(initial_pose);
 
     ROS_INFO("Starting from initial pose (%.5f,%.5f,%.5f)", initial_pose.x(), initial_pose.y(), initial_pose.z());
 
@@ -207,12 +222,14 @@ int main(int argc, char** argv)
 
     sync.registerCallback(boost::bind(&scan_mathcher, _1, _2));
 
-    ros::Rate loop_rate(param_rate);
-
     ROS_INFO("NDTPSO node started successfuly");
+
+    // Using the ros::Rate + ros::spinOnce can slows down the ApproxSyncPolicy if no sufficient buffer
+    ros::Rate loop_rate(param_rate);
 
     while (ros::ok()) {
         ros::spinOnce();
+        pose_pub.publish(current_pub_pose);
         loop_rate.sleep();
     }
 
