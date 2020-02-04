@@ -28,6 +28,7 @@ public:
     void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& angle_increment, const float& max_range);
     void update(Vector3d trans, NDTFrame* const new_frame);
     void addPoint(Vector2d& point);
+    inline void setTrans(Vector3d trans) { this->_trans = trans; }
 #if defined(DEBUG) && DEBUG
     void print();
 #endif
