@@ -121,7 +121,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ndtpso_slam
   CATKIN_DEPENDS eigen roscpp
-  DEPENDS system_lib
+#  DEPENDS system_lib
 )
 
 ###########
