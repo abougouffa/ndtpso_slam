@@ -219,14 +219,14 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
     char output_filename[250];
 
     if (save_poses) {
-        sprintf(output_filename, "%s-poses.csv", filename);
+        sprintf(output_filename, "%s.pose.csv", filename);
         hndl_poses = fopen(output_filename, "w");
         if (hndl_poses)
             fprintf(hndl_poses, "timestamp,xP,yP,thP,xO,yO,thO\n");
     }
 
     if (save_points) {
-        sprintf(output_filename, "%s-map.csv", filename);
+        sprintf(output_filename, "%s.map.csv", filename);
         hndl_points = fopen(output_filename, "w");
         if (hndl_points)
             fprintf(hndl_points, "x,y\n");
@@ -240,7 +240,7 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
     int counter = 0;
 
     cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
-    cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
+    // cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
 
     for (unsigned int i = 0; i < this->numOfCells; ++i)
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
@@ -293,6 +293,29 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
 
     if (save_points)
         fclose(hndl_points);
+
+    if (save_poses || save_points) {
+        // Save the .gnuplot file to plot the outputs
+        sprintf(output_filename, "%s.gnuplot", filename);
+        hndl_poses = fopen(output_filename, "w");
+
+        fprintf(hndl_poses,
+                "set datafile separator ','\n"
+                "set key autotitle columnhead\n"
+                "set size ratio -1\n"
+                "plot '%s.map.csv' title 'Map (from front scans)' with points pointsize 0.2 "
+                "pointtype 5 linecolor rgb '#555555', \\\n"
+                "'%s.pose.csv' using 2:3 title 'Pose (back lidar)' with linespoints linewidth 0.7 "
+                "pointtype 6 pointsize 0.7 linecolor rgb '#ff0000', \\\n"
+                "'%s.pose.csv' using 5:6 title 'Odometry' with linespoints linewidth 0.7 pointtype "
+                "6 pointsize 0.7 linecolor rgb '#0000ff'\n"
+                "pause 1000\n",
+                filename,
+                filename,
+                filename);
+
+        fclose(hndl_poses);
+    }
 
     if (save_image) {
         sprintf(output_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
