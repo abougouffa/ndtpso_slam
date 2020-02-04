@@ -36,7 +36,7 @@ public:
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
     void dumpMap(const char* const filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50);
     void addPose(double timestamp, Vector3d pose, Vector3d odom = Vector3d::Zero());
-    void resetPoints();
+    void resetCells();
 };
 
 extern double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame);

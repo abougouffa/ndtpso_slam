@@ -28,7 +28,7 @@ public:
     bool created;
     bool build();
     double normalDistribution(Vector2d point);
-    void resetPoints();
+    void reset();
 };
 
 #endif // NDTCELL_H

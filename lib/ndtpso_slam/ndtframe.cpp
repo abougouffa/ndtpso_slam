@@ -166,11 +166,11 @@ void NDTFrame::addPose(double timestamp, Vector3d pose, Vector3d odom)
     this->_odoms.push_back(odom);
 }
 
-void NDTFrame::resetPoints()
+void NDTFrame::resetCells()
 {
     unsigned int n = unsigned(this->cells.size());
     for (unsigned int i = 0; i < n; ++i)
-        this->cells[i].resetPoints();
+        this->cells[i].reset();
 }
 
 // Add the given point 'pt' to it's corresponding cell

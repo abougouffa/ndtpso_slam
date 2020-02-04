@@ -66,7 +66,7 @@ double NDTCell::normalDistribution(Vector2d point)
     }
 }
 
-void NDTCell::resetPoints()
+void NDTCell::reset()
 {
     this->_frame_sum << 0, 0;
     this->_points_num = 0;
