@@ -9,7 +9,7 @@
 
 // PSO parameters
 #define PSO_ITERATIONS 70
-#define PSO_POPULATION_SIZE 40
+#define PSO_POPULATION_SIZE 50
 #define PSO_W_DUMPING_COEF 1.
 #define PSO_W .8
 #define PSO_C1 2.
