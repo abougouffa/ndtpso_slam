@@ -136,15 +136,23 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "ndtpso_slam");
     ros::NodeHandle nh("~");
 
+    // Print some useful information
     ROS_INFO("NDTPSO Scan Matcher v%s", NDTPSO_SLAM_VERSION);
 #pragma GCC diagnostic push
     /* Disable the warning which says that date and time aren't reproducible
      * => normal; it is the expected behaviour
      */
 #pragma GCC diagnostic ignored "-Wdate-time"
-    ROS_INFO("Compiled %s at %s", __DATE__, __TIME__);
+    ROS_INFO("Compiled on %s at %s", __DATE__, __TIME__);
 #pragma GCC diagnostic pop
 
+#if __GNUC__
+    ROS_INFO("Compiled with GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#elif __clang__
+    ROS_INFO("Compiled with Clang %s", __clang_version__);
+#endif
+
+    // Read parameters
     std::string param_scan_topic, param_odom_topic, param_lidar_frame;
     int param_map_size, param_rate;
 
@@ -162,6 +170,7 @@ int main(int argc, char** argv)
     ROS_INFO("sync_topic:= \"%s\"", param_sync_topic.c_str());
 #endif
 
+    // Print patameters
     ROS_INFO("scan_topic:= \"%s\"", param_scan_topic.c_str());
     ROS_INFO("odom_topic:= \"%s\"", param_odom_topic.c_str());
     ROS_INFO("scan_frame:= \"%s\"", param_lidar_frame.c_str());
@@ -170,7 +179,7 @@ int main(int argc, char** argv)
     ROS_INFO("Config [PSO Number of Iterations: %d]", PSO_ITERATIONS);
     ROS_INFO("Config [PSO Population Size: %d]", PSO_POPULATION_SIZE);
     ROS_INFO("Config [NDT Cell Size: %.2fm]", param_cell_side);
-    ROS_INFO("Config [NDT Window Size:: %d]", NDT_WINDOW_SIZE);
+    ROS_INFO("Config [NDT Window Size: %d]", NDT_WINDOW_SIZE);
 
     ref_frame = new NDTFrame(Vector3d::Zero(), DEFAULT_REF_FRAME_SIZE_M, DEFAULT_REF_FRAME_SIZE_M, DEFAULT_CELL_SIZE_M);
 #if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
