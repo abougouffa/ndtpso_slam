@@ -16,7 +16,7 @@ private:
     inline void _calc_covar_inverse();
 
 public:
-    unsigned int frame_id;
+    unsigned int frame_count;
     std::vector<Vector2d> points;
     Vector2d mean;
     NDTCell(std::vector<Vector2d> points = {});

@@ -4,7 +4,7 @@
 
 NDTCell::NDTCell(vector<Vector2d> points)
     : _points_num(0)
-    , frame_id(0)
+    , frame_count(0)
     , points(points)
     , built(false)
     , created(false)
@@ -39,11 +39,11 @@ void NDTCell::addPoint(Vector2d point)
 
 bool NDTCell::build()
 {
-    this->_global_sum = this->_global_sum + this->_frame_sum - this->_frame_sums[this->frame_id];
-    this->_frame_sums[this->frame_id] = this->_frame_sum;
+    this->_global_sum = this->_global_sum + this->_frame_sum - this->_frame_sums[this->frame_count];
+    this->_frame_sums[this->frame_count] = this->_frame_sum;
 
-    this->_global_points_num = this->_global_points_num + this->_points_num - this->_points_nums[this->frame_id];
-    this->_points_nums[this->frame_id] = this->_points_num;
+    this->_global_points_num = this->_global_points_num + this->_points_num - this->_points_nums[this->frame_count];
+    this->_points_nums[this->frame_count] = this->_points_num;
 
     if (this->_points_num > 2) { // this->points.size() > 2
         this->mean = this->_global_sum / this->_global_points_num;
@@ -51,7 +51,7 @@ bool NDTCell::build()
         this->built = true;
     }
 
-    this->frame_id = (this->frame_id + 1) % NDT_WINDOW_SIZE;
+    this->frame_count = (this->frame_count + 1) % NDT_WINDOW_SIZE;
 
     return this->built;
 }
@@ -86,8 +86,8 @@ void NDTCell::_calc_covar_inverse()
         cov += (tmp_pt * tmp_pt.transpose());
     }
 
-    this->_global_covar_sum = (this->_global_covar_sum + cov) - this->_frame_covars[this->frame_id];
-    this->_frame_covars[this->frame_id] = cov;
+    this->_global_covar_sum = (this->_global_covar_sum + cov) - this->_frame_covars[this->frame_count];
+    this->_frame_covars[this->frame_count] = cov;
 
     Matrix2d covar = this->_global_covar_sum / this->_global_points_num;
 
