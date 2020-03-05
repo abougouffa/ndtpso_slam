@@ -21,14 +21,6 @@ NDTCell::NDTCell(vector<Vector2d> points)
     this->_points_num = 0;
 }
 
-#if defined(DEBUG) && DEBUG
-void NDTCell::print(int index)
-{
-    for (unsigned int i = 0; i < this->points.size(); ++i)
-        printf("@%d, (%f, %f)\n", index, this->points[i][0], this->points[i][1]);
-}
-#endif
-
 void NDTCell::addPoint(Vector2d point)
 {
     this->_points_num++;
