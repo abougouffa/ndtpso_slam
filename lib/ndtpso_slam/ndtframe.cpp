@@ -57,15 +57,6 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
     }
 }
 
-#if defined(DEBUG) && DEBUG
-void NDTFrame::print()
-{
-    for (unsigned int i = 0; i < this->numOfCells; ++i) {
-        this->cells[i].print(int(i));
-    }
-}
-#endif
-
 void NDTFrame::build()
 {
     //    if (this->built) {
