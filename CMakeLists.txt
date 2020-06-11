@@ -26,7 +26,11 @@ endif()
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp tf geometry_msgs nav_msgs message_filters
+  roscpp
+  tf
+  geometry_msgs
+  nav_msgs
+  message_filters
 )
 
 ## System dependencies are found with CMake's conventions
@@ -118,9 +122,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES ndtpso_slam
-  CATKIN_DEPENDS eigen roscpp
+#  INCLUDE_DIRS include
+#  LIBRARIES ndtpso_slam
+#  CATKIN_DEPENDS eigen roscpp
 #  DEPENDS system_lib
 )
 

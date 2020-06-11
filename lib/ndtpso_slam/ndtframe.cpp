@@ -98,7 +98,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
     this->built = false;
     unsigned int n = static_cast<unsigned int>(laser_data.size());
 
-#if defined(USING_TRANS) && USING_TRANS
+#if USING_TRANS
     // Define a function 'f' to do transformation if needed
     Vector2d (*transform)(Vector2d&, Vector3d&) = nullptr;
 
@@ -107,7 +107,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
 #endif
 
     float theta;
-#if defined(PREFER_FRONTAL_POINTS) && PREFER_FRONTAL_POINTS
+#if PREFER_FRONTAL_POINTS
     float delta_theta = 0.f;
 #endif
 
@@ -117,19 +117,19 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
     for (unsigned int i = 0; i < n; ++i) {
         if ((laser_data[i] < max_range) && (laser_data[i] > LASER_IGNORE_EPSILON)) {
             theta = index_to_angle(i, angle_increment, min_angle);
-#if defined(PREFER_FRONTAL_POINTS) && PREFER_FRONTAL_POINTS
+#if PREFER_FRONTAL_POINTS
             delta_theta += sinf(theta);
 
             if (fabsf(delta_theta) > .5f) {
 #endif
                 Vector2d point = laser_to_point(laser_data[i], theta);
 
-#if defined(USING_TRANS) && USING_TRANS
+#if USING_TRANS
                 if (transform)
                     point = transform(point, this->_trans);
 #endif
                 this->addPoint(point);
-#if defined(PREFER_FRONTAL_POINTS) && PREFER_FRONTAL_POINTS
+#if PREFER_FRONTAL_POINTS
                 delta_theta = 0.f;
             }
 #endif
@@ -291,19 +291,19 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
         hndl_poses = fopen(output_filename, "w");
 
         fprintf(hndl_poses,
-                "set datafile separator ','\n"
-                "set key autotitle columnhead\n"
-                "set size ratio -1\n"
-                "plot '%s.map.csv' title 'Map (from front scans)' with points pointsize 0.2 "
-                "pointtype 5 linecolor rgb '#555555', \\\n"
-                "'%s.pose.csv' using 2:3 title 'Pose (back lidar)' with linespoints linewidth 0.7 "
-                "pointtype 6 pointsize 0.7 linecolor rgb '#ff0000', \\\n"
-                "'%s.pose.csv' using 5:6 title 'Odometry' with linespoints linewidth 0.7 pointtype "
-                "6 pointsize 0.7 linecolor rgb '#0000ff'\n"
-                "pause 1000\n",
-                filename,
-                filename,
-                filename);
+            "set datafile separator ','\n"
+            "set key autotitle columnhead\n"
+            "set size ratio -1\n"
+            "plot '%s.map.csv' title 'Map (from front scans)' with points pointsize 0.2 "
+            "pointtype 5 linecolor rgb '#555555', \\\n"
+            "'%s.pose.csv' using 2:3 title 'Pose (back lidar)' with linespoints linewidth 0.7 "
+            "pointtype 6 pointsize 0.7 linecolor rgb '#ff0000', \\\n"
+            "'%s.pose.csv' using 5:6 title 'Odometry' with linespoints linewidth 0.7 pointtype "
+            "6 pointsize 0.7 linecolor rgb '#0000ff'\n"
+            "pause 1000\n",
+            filename,
+            filename,
+            filename);
 
         fclose(hndl_poses);
     }

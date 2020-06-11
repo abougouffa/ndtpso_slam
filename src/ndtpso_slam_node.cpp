@@ -17,7 +17,8 @@
 #define NDTPSO_SLAM_VERSION "1.0.5"
 
 #define SAVE_DATA_TO_FILE true
-#define SYNC_WITH_LASER_TOPIC true
+#define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 1
+#define SYNC_WITH_LASER_TOPIC false
 #define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 200
 #define DEFAULT_REF_FRAME_SIZE_M 50.
@@ -89,10 +90,10 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     previous_pose = current_pose;
     ref_frame->update(current_pose, current_frame);
 
-#if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
+#if SAVE_DATA_TO_FILE
     if (iter_num == 0)
         global_map->update(current_pose, current_frame);
-    iter_num = (iter_num + 1) % 10;
+    iter_num = (iter_num + 1) % SAVE_DATA_TO_FILE_EACH_NUM_ITERS;
     global_map->addPose(scan->header.stamp.toSec(),
         current_pose,
         Vector3d(odom->pose.pose.position.x,
@@ -164,7 +165,7 @@ int main(int argc, char** argv)
     nh.param("cell_side", param_cell_side, DEFAULT_CELL_SIZE_M);
     nh.param<int>("frame_size", param_frame_size, DEFAULT_FRAME_SIZE_M);
 
-#if defined(SYNC_WITH_LASER_TOPIC) && SYNC_WITH_LASER_TOPIC
+#if SYNC_WITH_LASER_TOPIC
     std::string param_sync_topic;
     nh.param<std::string>("sync_topic", param_sync_topic, param_scan_topic);
     ROS_INFO("sync_topic:= \"%s\"", param_sync_topic.c_str());
@@ -182,7 +183,7 @@ int main(int argc, char** argv)
     ROS_INFO("Config [NDT Window Size: %d]", NDT_WINDOW_SIZE);
 
     ref_frame = new NDTFrame(Vector3d::Zero(), DEFAULT_REF_FRAME_SIZE_M, DEFAULT_REF_FRAME_SIZE_M, DEFAULT_CELL_SIZE_M);
-#if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
+#if SAVE_DATA_TO_FILE
     global_map = new NDTFrame(Vector3d::Zero(), static_cast<unsigned short>(param_map_size), static_cast<unsigned short>(param_map_size), param_map_size);
 #endif
 
@@ -202,11 +203,11 @@ int main(int argc, char** argv)
     initial_pose = Vector3d(init_trans.getX(), init_trans.getY(), tf::getYaw(transform.getRotation()));
     current_frame->setTrans(initial_pose);
 
-    ROS_INFO("Starting from initial pose (%.5f,%.5f,%.5f)", initial_pose.x(), initial_pose.y(), initial_pose.z());
+    ROS_INFO("Starting from initial pose (%.5f, %.5f, %.5f)", initial_pose.x(), initial_pose.y(), initial_pose.z());
 
     typedef message_filters::sync_policies::ApproximateTime<
         sensor_msgs::LaserScan, nav_msgs::Odometry
-#if defined(SYNC_WITH_LASER_TOPIC) && SYNC_WITH_LASER_TOPIC
+#if SYNC_WITH_LASER_TOPIC
         ,
         sensor_msgs::LaserScan
 #endif
@@ -216,14 +217,14 @@ int main(int argc, char** argv)
     message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub(nh, param_scan_topic, 10);
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, param_odom_topic, 10);
 
-#if defined(SYNC_WITH_LASER_TOPIC) && SYNC_WITH_LASER_TOPIC
+#if SYNC_WITH_LASER_TOPIC
     message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub_sync(nh, param_sync_topic, 10);
 #endif
 
     message_filters::Synchronizer<ApproxSyncPolicy>
         sync(ApproxSyncPolicy(10),
             laser_sub, odom_sub
-#if defined(SYNC_WITH_LASER_TOPIC) && SYNC_WITH_LASER_TOPIC
+#if SYNC_WITH_LASER_TOPIC
             ,
             laser_sub_sync
 #endif
@@ -242,7 +243,7 @@ int main(int argc, char** argv)
         loop_rate.sleep();
     }
 
-#if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
+#if SAVE_DATA_TO_FILE
     cout << endl
          << "Exporting results "
          << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;

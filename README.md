@@ -12,5 +12,5 @@ proposed scan matching method, and in the other part, the ROS node `ndtpso_slam_
 library.
 
 ### Maintainer:
-Abdelhak BOUGOUFFA, Paris-Saclay University <[abdelhak.bougouffa[at]universite-paris-saclay.fr](mailto:abdelhak.bougouffa@universite-paris-saclay.fr)>
+Abdelhak BOUGOUFFA, Paris-Saclay University, SATIE Laboratory <[abdelhak.bougouffa[at]universite-paris-saclay.fr](mailto:abdelhak.bougouffa@universite-paris-saclay.fr)>
 
