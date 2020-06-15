@@ -5,7 +5,7 @@
 #define NDT_WINDOW_SIZE 100
 #define NDT_MAX_POINTS_PER_CELL 100 // Unused now, to be used to limit the points/cell by a circular buffer, to ensure const memory
 #define LASER_IGNORE_EPSILON 0.1f // Ignore points around the origin with 10cm
-#define USING_TRANS false
+#define USING_TRANS true
 #define PREFER_FRONTAL_POINTS false // Disabled
 #define BUILD_OCCUPANCY_GRID true
 
@@ -16,7 +16,7 @@
 #endif
 
 // PSO parameters
-#define PSO_ITERATIONS 60
+#define PSO_ITERATIONS 45
 #define PSO_POPULATION_SIZE 25
 #define PSO_W_DUMPING_COEF 1.
 #define PSO_W .8
