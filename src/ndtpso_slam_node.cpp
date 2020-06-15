@@ -84,6 +84,9 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
         current_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
         previous_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
         start_time = std::chrono::high_resolution_clock::now();
+        ROS_INFO("Min/Max ranges: %.2f/%.2f", static_cast<double>(scan->range_min), static_cast<double>(scan->range_max));
+        ROS_INFO("Min/Max angles: %.2f/%.2f", static_cast<double>(scan->angle_min), static_cast<double>(scan->angle_max));
+
     } else {
         current_pose = ref_frame->align(previous_pose, current_frame);
     }
