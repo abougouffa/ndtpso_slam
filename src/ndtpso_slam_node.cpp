@@ -14,21 +14,22 @@
 #include <mutex>
 #include <tf/transform_listener.h>
 
-#define NDTPSO_SLAM_VERSION "1.0.5"
+#define NDTPSO_SLAM_VERSION "1.2.0"
 
 #define SAVE_DATA_TO_FILE true
 #define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 1
 #define SYNC_WITH_LASER_TOPIC false
 #define DEFAULT_CELL_SIZE_M .5
-#define DEFAULT_FRAME_SIZE_M 200
-#define DEFAULT_REF_FRAME_SIZE_M 100.
+#define DEFAULT_FRAME_SIZE_M 100
 #define DEFAULT_SCAN_TOPIC "/scan_front"
 #define DEFAULT_ODOM_TOPIC "/odom"
 #define DEFAULT_LIDAR_FRAME "lidar_front"
 #define DEFAULT_OUTPUT_MAP_SIZE_M 25
 #define DEFAULT_RATE_HZ 10
-#define DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M .1
 
+#if BUILD_OCCUPANCY_GRID
+#define DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M .1
+#endif
 /**
  * To represent the odometry and the published pose in the same reference frame,
  * the frame_id should be the same reference frame as odometry (in general "odom" for "/odom")
@@ -86,7 +87,6 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
         start_time = std::chrono::high_resolution_clock::now();
         ROS_INFO("Min/Max ranges: %.2f/%.2f", static_cast<double>(scan->range_min), static_cast<double>(scan->range_max));
         ROS_INFO("Min/Max angles: %.2f/%.2f", static_cast<double>(scan->angle_min), static_cast<double>(scan->angle_max));
-
     } else {
         current_pose = ref_frame->align(previous_pose, current_frame);
     }
@@ -105,7 +105,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
             odom_orientation));
 #endif
 
-    // Publish 'pose', using the same timestamp of the laserscan (use ros::Time::now() !!)
+    // Publish 'pose', using the same timestamp of the laserscan (or use ros::Time::now() !!)
     current_pub_pose.header.stamp = scan->header.stamp;
     current_pub_pose.header.frame_id = DEFAULT_PUBLISHED_POSE_FRAME_ID; // we can read it from config
     current_pub_pose.pose.position.x = current_pose.x();
@@ -161,6 +161,7 @@ int main(int argc, char** argv)
     // Read parameters
     std::string param_scan_topic, param_odom_topic, param_lidar_frame;
     int param_map_size, param_rate;
+    double param_occupancy_grid_cell_side;
 
     nh.param<std::string>("scan_topic", param_scan_topic, DEFAULT_SCAN_TOPIC);
     nh.param<std::string>("odom_topic", param_odom_topic, DEFAULT_ODOM_TOPIC);
@@ -169,7 +170,9 @@ int main(int argc, char** argv)
     nh.param("rate", param_rate, DEFAULT_RATE_HZ);
     nh.param("cell_side", param_cell_side, DEFAULT_CELL_SIZE_M);
     nh.param<int>("frame_size", param_frame_size, DEFAULT_FRAME_SIZE_M);
-
+#if BUILD_OCCUPANCY_GRID
+    nh.param("og_cell_side", param_occupancy_grid_cell_side, DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M);
+#endif
 #if SYNC_WITH_LASER_TOPIC
     std::string param_sync_topic;
     nh.param<std::string>("sync_topic", param_sync_topic, param_scan_topic);
@@ -186,18 +189,43 @@ int main(int argc, char** argv)
     ROS_INFO("Config [PSO Population Size: %d]", PSO_POPULATION_SIZE);
     ROS_INFO("Config [NDT Cell Size: %.2fm]", param_cell_side);
     ROS_INFO("Config [NDT Window Size: %d]", NDT_WINDOW_SIZE);
-
-    ref_frame = new NDTFrame(Vector3d::Zero(),
-        DEFAULT_REF_FRAME_SIZE_M,
-        DEFAULT_REF_FRAME_SIZE_M,
-        DEFAULT_CELL_SIZE_M,
-        DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M);
-
-#if SAVE_DATA_TO_FILE
-    global_map = new NDTFrame(Vector3d::Zero(), static_cast<unsigned short>(param_map_size), static_cast<unsigned short>(param_map_size), param_map_size);
+#if BUILD_OCCUPANCY_GRID
+    ROS_INFO("Config [Occupancy Grid Cell Size: %.2fm]", param_occupancy_grid_cell_side);
 #endif
 
-    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_cell_side, 0.);
+    // The reference frame which will be used for all the matching operations,
+    // It is the only frame which needs to be set to the correct cell and occupancy grid sizes
+    ref_frame = new NDTFrame(Vector3d::Zero(),
+        static_cast<unsigned short>(param_frame_size),
+        static_cast<unsigned short>(param_frame_size),
+        param_cell_side
+#if BUILD_OCCUPANCY_GRID
+        ,
+        param_occupancy_grid_cell_side
+#endif
+    );
+
+#if SAVE_DATA_TO_FILE
+    global_map = new NDTFrame(Vector3d::Zero(),
+        static_cast<unsigned short>(param_map_size),
+        static_cast<unsigned short>(param_map_size),
+        param_map_size
+#if BUILD_OCCUPANCY_GRID
+        ,
+        0.
+#endif
+    );
+#endif
+
+    current_frame = new NDTFrame(initial_pose,
+        static_cast<unsigned short>(param_frame_size),
+        static_cast<unsigned short>(param_frame_size),
+        param_cell_side
+#if BUILD_OCCUPANCY_GRID
+        ,
+        0.
+#endif
+    );
 
     pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
