@@ -17,7 +17,7 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
         // Transform the points of the new frame to the reference frame, and sum thiers probabilities
         for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
             Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
-            int index_in_ref_frame = ref_frame->getCellIndex(point);
+            int index_in_ref_frame = ref_frame->getCellIndex(point, ref_frame->widthNumOfCells, ref_frame->cell_side);
 
             if ((-1 != index_in_ref_frame)
                 && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
@@ -168,27 +168,38 @@ void NDTFrame::resetCells()
 void NDTFrame::addPoint(Vector2d& point)
 {
     // Get the cell index in the list
-    int cell_index = this->getCellIndex(point);
+    int cell_index = this->getCellIndex(point, this->widthNumOfCells, this->cell_side);
 
     // If the point is contained in the frame borders and it's not at the origin
-    if (cell_index != -1) {
+    if (-1 != cell_index) {
         // And then, append the point to its cell points list
-        this->cells[static_cast<unsigned int>(cell_index)].addPoint(point);
+        this->cells[static_cast<size_t>(cell_index)].addPoint(point);
 
         this->built = false; // Set 'built' flag to false to rebuild the cell if needed
     }
+
+#if BUILD_OCCUPANCY_GRID && false
+    if (this->_occupancy_grid.cell_size > 0.) {
+        cell_index = this->getCellIndex(point,
+            static_cast<int>(this->_occupancy_grid.width),
+            this->_occupancy_grid.cell_size);
+        if (-1 != cell_index) {
+            this->_occupancy_grid.og[static_cast<unsigned int>(cell_index)]++;
+        }
+    }
+#endif
 }
 
 // volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**); // Just for fun!
 
-int NDTFrame::getCellIndex(Vector2d point)
+int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
 {
-    // If the point is contained in the FRAME borders
+    // If the point is contained inside the FRAME borders
     if ((point.x() > this->_x_min) && (point.x() < this->_x_max)
         && (point.y() > this->_y_min) && (point.y() < this->_y_max)) {
         // Then return the index of the its corresponding CELL
-        return static_cast<int>(floor((point.x() + (this->width / 2.)) / this->cell_side)
-            + this->widthNumOfCells * (floor((point.y() + (this->height / 2.)) / this->cell_side)));
+        return static_cast<int>(floor((point.x() + (this->width / 2.)) / cell_side)
+            + grid_width * (floor((point.y() + (this->height / 2.)) / cell_side)));
     } else {
         return -1;
     }
