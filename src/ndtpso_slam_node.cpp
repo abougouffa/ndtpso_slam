@@ -61,7 +61,7 @@ static geometry_msgs::PoseStamped current_pub_pose;
 // The odometry is used just for the initial pose to be easily compared with our calculated pose
 void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::OdometryConstPtr& odom)
 {
-#if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
+#if SAVE_DATA_TO_FILE
     static unsigned int iter_num = 0;
 #endif
     matcher_mutex.lock();
@@ -132,7 +132,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     ++number_of_iters;
     std::chrono::duration<double> current_rate = last_call_time - start_time;
 
-    ROS_INFO("Average rate: %.5fHz, matching rate: %.5fs", 1.0 / (current_rate.count() / number_of_iters), 1. / elapsed.count());
+    ROS_INFO("Average publish rate: %.2fHz, matching rate: %.2fHz", 1.0 / (current_rate.count() / number_of_iters), 1. / elapsed.count());
     matcher_mutex.unlock();
 }
 
