@@ -48,9 +48,22 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
     this->numOfCells = widthNumOfCells * heightNumOfCells;
     this->cells = vector<NDTCell>(this->numOfCells);
 
-    this->_y_min = -height / 2.;
-    this->_y_max = height / 2.;
+#if BUILD_OCCUPANCY_GRID
+    // Initializing the occupancy grid,
+    this->_occupancy_grid.cell_size = occupancy_grid_cell_size;
 
+    // I case of zero size cell, all operations on the occupancy grid are ommited,
+    // This saves some computing time when OG aren't needed (like in intermediate
+    // frames used for loading laser data and matching)
+    if (occupancy_grid_cell_size > 0.) {
+        this->_occupancy_grid.width = uint32_t(ceil(width / occupancy_grid_cell_size));
+        this->_occupancy_grid.height = uint32_t(ceil(height / occupancy_grid_cell_size));
+        this->_occupancy_grid.count = this->_occupancy_grid.width * this->_occupancy_grid.height;
+        this->_occupancy_grid.og = vector<int8_t>(this->_occupancy_grid.count, 0);
+    }
+#endif
+
+    /*
     // TODO: Needs to be generic !!
     if (positive_only) {
         this->_x_min = -7.2; // <-- here
