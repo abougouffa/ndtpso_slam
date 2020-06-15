@@ -147,6 +147,7 @@ add_library(${PROJECT_NAME}
   lib/${PROJECT_NAME}/ndtcell.cpp
   lib/${PROJECT_NAME}/core.cpp
   lib/${PROJECT_NAME}/ndtframe.cpp
+  lib/${PROJECT_NAME}/logger.cpp
 )
 
 ## Add cmake target dependencies of the library

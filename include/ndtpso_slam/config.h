@@ -9,6 +9,12 @@
 #define PREFER_FRONTAL_POINTS false // Disabled
 #define BUILD_OCCUPANCY_GRID true
 
+#define USE_LOGGER false
+
+#if USE_LOGGER
+#define LOGGER_BUFFER_SIZE_LINES 50
+#endif
+
 // PSO parameters
 #define PSO_ITERATIONS 60
 #define PSO_POPULATION_SIZE 25
