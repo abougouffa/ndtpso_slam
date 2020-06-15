@@ -378,7 +378,7 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
                 img_og.at<uint8_t>(
                     int(this->_occupancy_grid.width - (i / this->_occupancy_grid.width)),
                     int(i % this->_occupancy_grid.height))
-                    = uint8_t(255.0 - this->_occupancy_grid.og[i] * 2.5);
+                    = uint8_t(255.0 - this->_occupancy_grid.og[i] * 2.55);
             }
         }
 
