@@ -2,22 +2,27 @@
 #include <eigen3/Eigen/Eigen>
 #include <stdio.h>
 
-NDTCell::NDTCell()
+NDTCell::NDTCell(bool calculate_params)
     : _current_count(0)
     , _current_window_id(0)
     , built(false)
     , created(false)
 {
-    for (unsigned int i = 0; i < NDT_WINDOW_SIZE; ++i) {
-        this->_partial_sums[i] << 0, 0;
-        this->_partial_counts[i] = 0;
-        this->_partial_covars[i] << 0, 0,
-            0, 0;
+    if (calculate_params) {
+        for (unsigned int i = 0; i < NDT_WINDOW_SIZE; ++i) {
+            this->_partial_sums[i] = Vector2d::Zero();
+            this->_partial_counts[i] = 0;
+            this->_partial_covars[i] = Matrix2d::Zero();
+        }
+
+        this->_global_sum = Vector2d::Zero();
+        this->_global_covar_sum = Matrix2d::Zero();
+        this->_global_count = 0;
     }
 
-    this->_current_partial_sum << 0, 0;
-    this->_global_sum << 0, 0;
+    this->_current_partial_sum = Vector2d::Zero();
     this->_current_count = 0;
+    this->_current_window_id = 0;
 }
 
 void NDTCell::addPoint(Vector2d point)
@@ -39,9 +44,7 @@ bool NDTCell::build()
     if (this->_global_count > 2) {
         this->mean = this->_global_sum / this->_global_count;
 
-        Matrix2d cov;
-        cov << .0, .0,
-            .0, .0;
+        Matrix2d cov = Matrix2d::Zero();
 
         Vector2d tmp_pt;
 
@@ -59,11 +62,8 @@ bool NDTCell::build()
 
     this->_current_window_id = (this->_current_window_id + 1) % NDT_WINDOW_SIZE;
 
-    //        if (this->_current_count > 50) {
-    //            delete this->points;
-    //            this->points = new vector<Vector2d>;
     this->_current_count = 0;
-    //    }
+    this->_current_partial_sum = Vector2d::Zero();
 
     return this->built;
 }
@@ -80,8 +80,12 @@ double NDTCell::normalDistribution(Vector2d point)
 
 void NDTCell::reset()
 {
-    this->_current_partial_sum << 0, 0;
+    this->_current_partial_sum = Vector2d::Zero();
+    this->_global_sum = Vector2d::Zero();
     this->_current_count = 0;
+    this->_global_count = 0;
+    this->_global_covar_sum = Matrix2d::Zero();
+    this->_current_window_id = 0;
 
     for (auto point : this->points) {
         point.clear();

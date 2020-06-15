@@ -120,7 +120,11 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 
     // Reallocate the current_frame object, this is much faster than calling current_frame->resetCells()
     delete current_frame;
-    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_frame_size, 0.);
+    current_frame = new NDTFrame(initial_pose,
+        static_cast<unsigned short>(param_frame_size),
+        static_cast<unsigned short>(param_frame_size),
+        param_frame_size,
+        false);
 
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
@@ -198,7 +202,8 @@ int main(int argc, char** argv)
     ref_frame = new NDTFrame(Vector3d::Zero(),
         static_cast<unsigned short>(param_frame_size),
         static_cast<unsigned short>(param_frame_size),
-        param_cell_side
+        param_cell_side,
+        true
 #if BUILD_OCCUPANCY_GRID
         ,
         param_occupancy_grid_cell_side
@@ -209,23 +214,15 @@ int main(int argc, char** argv)
     global_map = new NDTFrame(Vector3d::Zero(),
         static_cast<unsigned short>(param_map_size),
         static_cast<unsigned short>(param_map_size),
-        param_map_size
-#if BUILD_OCCUPANCY_GRID
-        ,
-        0.
-#endif
-    );
+        param_map_size,
+        false);
 #endif
 
     current_frame = new NDTFrame(initial_pose,
         static_cast<unsigned short>(param_frame_size),
         static_cast<unsigned short>(param_frame_size),
-        param_cell_side
-#if BUILD_OCCUPANCY_GRID
-        ,
-        0.
-#endif
-    );
+        param_cell_side,
+        false);
 
     pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 

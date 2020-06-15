@@ -5,7 +5,7 @@
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
 
-NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side
+NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, bool calculate_cells_params
 #if BUILD_OCCUPANCY_GRID
     ,
     double occupancy_grid_cell_size
@@ -20,7 +20,7 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
     this->widthNumOfCells = uint16_t(ceil(width / cell_side));
     this->heightNumOfCells = uint16_t(ceil(height / cell_side));
     this->numOfCells = widthNumOfCells * heightNumOfCells;
-    this->cells = vector<NDTCell>(this->numOfCells);
+    this->cells = vector<NDTCell>(this->numOfCells, NDTCell(calculate_cells_params));
 
 #if BUILD_OCCUPANCY_GRID
     // Initializing the occupancy grid,
