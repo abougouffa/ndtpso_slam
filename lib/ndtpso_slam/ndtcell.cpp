@@ -72,6 +72,8 @@ void NDTCell::_calc_covar_inverse()
 
     Vector2d tmp_pt;
 
+    // TODO: This part is totally inconsistant with the NDT window logic,
+    // but it works better than when modified to be consistant
     for (uint16_t i = 0; i < this->_current_count; ++i) {
         tmp_pt = this->points[i] - this->mean;
         cov += (tmp_pt * tmp_pt.transpose());
