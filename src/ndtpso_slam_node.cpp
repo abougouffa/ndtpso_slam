@@ -27,6 +27,7 @@
 #define DEFAULT_LIDAR_FRAME "lidar_front"
 #define DEFAULT_OUTPUT_MAP_SIZE_M 25
 #define DEFAULT_RATE_HZ 10
+#define DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M .1
 
 /**
  * To represent the odometry and the published pose in the same reference frame,
@@ -114,8 +115,9 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     current_pub_pose.pose.orientation.z = q_ori.getZ();
     current_pub_pose.pose.orientation.w = q_ori.getW();
 
+    // Reallocate the current_frame object, this is much faster than calling current_frame->resetCells()
     delete current_frame;
-    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_frame_size, true);
+    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_frame_size, 0.);
 
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
@@ -182,12 +184,17 @@ int main(int argc, char** argv)
     ROS_INFO("Config [NDT Cell Size: %.2fm]", param_cell_side);
     ROS_INFO("Config [NDT Window Size: %d]", NDT_WINDOW_SIZE);
 
-    ref_frame = new NDTFrame(Vector3d::Zero(), DEFAULT_REF_FRAME_SIZE_M, DEFAULT_REF_FRAME_SIZE_M, DEFAULT_CELL_SIZE_M);
+    ref_frame = new NDTFrame(Vector3d::Zero(),
+        DEFAULT_REF_FRAME_SIZE_M,
+        DEFAULT_REF_FRAME_SIZE_M,
+        DEFAULT_CELL_SIZE_M,
+        DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M);
+
 #if SAVE_DATA_TO_FILE
     global_map = new NDTFrame(Vector3d::Zero(), static_cast<unsigned short>(param_map_size), static_cast<unsigned short>(param_map_size), param_map_size);
 #endif
 
-    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_cell_side);
+    current_frame = new NDTFrame(initial_pose, static_cast<unsigned short>(param_frame_size), static_cast<unsigned short>(param_frame_size), param_cell_side, 0.);
 
     pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
@@ -250,7 +257,9 @@ int main(int argc, char** argv)
     char filename[256];
     // param_scan_topic = param_scan_topic.replace("/", "-");
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
-    global_map->dumpMap(filename, true, true, true, 200);
+    global_map->dumpMap(filename, true, true, true, 200, false);
     cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
+    sprintf(filename, "%s-%d-ref-frame", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
+    ref_frame->dumpMap(filename, false, false, false, 0, true);
 #endif
 }
