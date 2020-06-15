@@ -392,4 +392,24 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
 
         imwrite(output_filename, img);
     }
+
+    if (save_occupancy_grid) {
+        cv::Mat img_og(static_cast<int>(this->_occupancy_grid.width),
+            static_cast<int>(this->_occupancy_grid.height),
+            CV_8U, cv::Scalar::all(255));
+
+        for (unsigned int i = 0; i < this->_occupancy_grid.count; ++i) {
+            if (this->_occupancy_grid.og[i] > 0) {
+                img_og.at<uint8_t>(
+                    int(this->_occupancy_grid.width - (i / this->_occupancy_grid.width)),
+                    int(i % this->_occupancy_grid.height))
+                    = uint8_t(255.0 - this->_occupancy_grid.og[i] * 2.5);
+            }
+        }
+
+        sprintf(output_filename, "%s-%dxh%d-c%.2f-occupancy-grid.png",
+            filename, this->_occupancy_grid.width, this->_occupancy_grid.height, this->_occupancy_grid.cell_size);
+
+        imwrite(output_filename, img_og);
+    }
 }
