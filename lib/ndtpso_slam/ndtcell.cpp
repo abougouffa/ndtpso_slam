@@ -87,7 +87,7 @@ void NDTCell::reset()
     this->_global_covar_sum = Matrix2d::Zero();
     this->_current_window_id = 0;
 
-    for (auto point : this->points) {
+    for (auto& point : this->points) {
         point.clear();
     }
 }
