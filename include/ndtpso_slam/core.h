@@ -18,12 +18,12 @@ inline Vector2d transform_point(Vector2d& point, Vector3d& trans)
 {
     return Vector2d(point.x() * cos(trans.z()) - point.y() * sin(trans.z()) + trans.x(),
         point.x() * sin(trans.z()) + point.y() * cos(trans.z()) + trans.y());
-};
+}
 
 inline vector<double> origin_at(Vector2d& point, double& cell_side)
 {
     return { floor(point.x() / cell_side) * cell_side, floor(point.y() / cell_side) * cell_side };
-};
+}
 
 // Convert an index to angle based on "step" and "minimum angle" (used in laser data)
 inline float index_to_angle(unsigned int idx, float step, float min_angle)
@@ -35,6 +35,6 @@ inline float index_to_angle(unsigned int idx, float step, float min_angle)
 inline Vector2d laser_to_point(float r, float theta)
 {
     return Vector2d(double(r) * cos(double(theta)), double(r) * sin(double(theta)));
-};
+}
 
 #endif // NDTPSO_BASE_H
