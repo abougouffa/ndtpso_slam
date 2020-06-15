@@ -25,6 +25,32 @@ struct Particle {
     }
 };
 
+double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
+{
+    if (!ref_frame->built)
+        ref_frame->build();
+
+    double trans_cost = 0.;
+
+    // For all cells in the new frame
+    for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
+        // Transform the points of the new frame to the reference frame, and sum thiers probabilities
+        for (unsigned int j = 0; j < new_frame->cells[i].points[0].size(); ++j) {
+            Vector2d point = transform_point(new_frame->cells[i].points[0][j], trans);
+            int index_in_ref_frame = ref_frame->getCellIndex(point, ref_frame->widthNumOfCells, ref_frame->cell_side);
+
+            if ((-1 != index_in_ref_frame)
+                && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
+                double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
+                                               .normalDistribution(point);
+                trans_cost -= static_cast<double>(point_probability);
+            }
+        }
+    }
+
+    return trans_cost;
+}
+
 Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
 {
     double w = PSO_W, c1 = PSO_C1, c2 = PSO_C2, w_damping_coef = PSO_W_DUMPING_COEF;

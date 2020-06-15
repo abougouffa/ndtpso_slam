@@ -5,32 +5,6 @@
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
 
-double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
-{
-    if (!ref_frame->built)
-        ref_frame->build();
-
-    double trans_cost = 0.;
-
-    // For all cells in the new frame
-    for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
-        // Transform the points of the new frame to the reference frame, and sum thiers probabilities
-        for (unsigned int j = 0; j < new_frame->cells[i].points[0].size(); ++j) {
-            Vector2d point = transform_point(new_frame->cells[i].points[0][j], trans);
-            int index_in_ref_frame = ref_frame->getCellIndex(point, ref_frame->widthNumOfCells, ref_frame->cell_side);
-
-            if ((-1 != index_in_ref_frame)
-                && ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)].built) {
-                double point_probability = ref_frame->cells[static_cast<unsigned int>(index_in_ref_frame)]
-                                               .normalDistribution(point);
-                trans_cost -= static_cast<double>(point_probability);
-            }
-        }
-    }
-
-    return trans_cost;
-}
-
 NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side
 #if BUILD_OCCUPANCY_GRID
     ,
@@ -121,25 +95,27 @@ void NDTFrame::build()
     this->built = true;
 }
 
-//void NDTFrame::transform(Vector3d trans)
-//{
-//    if (!trans.isZero(1e-6)) {
-//        vector<NDTCell>* old_cells = &this->cells;
+#if false
+void NDTFrame::transform(Vector3d trans)
+{
+    if (!trans.isZero(1e-6)) {
+        vector<NDTCell>* old_cells = &this->cells;
 
-//        this->cells = vector<NDTCell>(this->numOfCells);
+        this->cells = vector<NDTCell>(this->numOfCells);
 
-//        for (unsigned int i = 0; i < this->numOfCells; ++i)
-//            if ((*old_cells)[i].created)
-//                for (unsigned int j = 0; j < this->cells[i].points->size(); ++j) {
-//                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
-//                    this->addPoint(new_point);
-//                }
+        for (unsigned int i = 0; i < this->numOfCells; ++i)
+            if ((*old_cells)[i].created)
+                for (unsigned int j = 0; j < this->cells[i].points->size(); ++j) {
+                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
+                    this->addPoint(new_point);
+                }
 
-//        delete old_cells;
+        delete old_cells;
 
-//        this->built = false;
-//    }
-//}
+        this->built = false;
+    }
+}
+#endif
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle

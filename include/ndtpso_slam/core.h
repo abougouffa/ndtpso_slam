@@ -37,4 +37,6 @@ inline Vector2d laser_to_point(float r, float theta)
     return Vector2d(double(r) * cos(double(theta)), double(r) * sin(double(theta)));
 }
 
+extern double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame);
+
 #endif // NDTPSO_BASE_H

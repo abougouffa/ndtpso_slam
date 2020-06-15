@@ -13,7 +13,6 @@ private:
     Vector3d _trans;
     vector<Vector3d> _poses, _odoms;
     vector<double> _timestamps;
-    bool _positive_only;
     double _x_min, _x_max, _y_min, _y_max;
     NdtPsoConfig _config;
 
@@ -47,6 +46,9 @@ public:
 #if defined(DEBUG) && DEBUG
     void print();
 #endif
+#if false
+    void transform(Vector3d trans);
+#endif
     void build();
     int getCellIndex(Vector2d point, int grid_width, double cell_side);
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
@@ -59,7 +61,5 @@ public:
     void addPose(double timestamp, Vector3d pose, Vector3d odom = Vector3d::Zero());
     void resetCells();
 };
-
-extern double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame);
 
 #endif // NDTFRAME_H
