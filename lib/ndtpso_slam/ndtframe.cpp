@@ -121,7 +121,6 @@ void NDTFrame::build()
     this->built = true;
 }
 
-
 void NDTFrame::transform(Vector3d trans)
 {
     if (!trans.isZero(1e-6)) {
@@ -151,10 +150,10 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
 
 #if USING_TRANS
     // Define a function 'f' to do transformation if needed
-    Vector2d (*transform)(Vector2d&, Vector3d&) = nullptr;
+    Vector2d (*trans_func)(Vector2d&, Vector3d&) = nullptr;
 
     if (!this->_trans.isZero(1e-6))
-        transform = &transform_point;
+        trans_func = &transform_point;
 #endif
 
     float theta;
@@ -176,8 +175,8 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
                 Vector2d point = laser_to_point(laser_data[i], theta);
 
 #if USING_TRANS
-                if (transform)
-                    point = transform(point, this->_trans);
+                if (trans_func)
+                    point = trans_func(point, this->_trans);
 #endif
                 this->addPoint(point);
 #if PREFER_FRONTAL_POINTS
