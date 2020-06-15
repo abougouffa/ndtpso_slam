@@ -32,7 +32,7 @@ public:
     bool built;
     unsigned int numOfCells;
     double cell_side;
-    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0
+    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0, bool calculate_cells_params = true
 #if BUILD_OCCUPANCY_GRID
         ,
         double occupancy_grid_cell_size = .0

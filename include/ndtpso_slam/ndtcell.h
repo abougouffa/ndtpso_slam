@@ -19,7 +19,7 @@ private:
 public:
     std::vector<Vector2d> points[NDT_WINDOW_SIZE];
     Vector2d mean;
-    NDTCell();
+    NDTCell(bool calculate_params = true);
     void addPoint(Vector2d point);
     bool built;
     bool created;
