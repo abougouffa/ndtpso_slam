@@ -106,7 +106,7 @@ void NDTFrame::build()
                         x = ((ind_x * n + j) * this->_occupancy_grid.cell_size + this->_occupancy_grid.cell_size / 2.) - (this->width / 2);
                         y = ((ind_y * n + k) * this->_occupancy_grid.cell_size + this->_occupancy_grid.cell_size / 2.) - (this->height / 2);
 
-                        auto p = current_cell->normalDistribution(Vector2d(x, y)) - 0.5;
+                        auto p = current_cell->normalDistribution(Vector2d(x, y)) /* - 0.5*/;
 
                         if (p > 0.) {
                             this->_occupancy_grid.og[(ind_x * n + j) + this->_occupancy_grid.height * (ind_y * n + k)] = int8_t(p * 100.);
