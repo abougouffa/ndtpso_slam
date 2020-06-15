@@ -72,24 +72,56 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
         this->_x_min = -width / 2.;
         this->_x_max = width / 2.;
     }
+
+    Deleted `positive_only` parameter, now this is simply:
+    */
+
+    this->_x_min = -width / 2.;
+    this->_x_max = width / 2.;
+    this->_y_min = -height / 2.;
+    this->_y_max = height / 2.;
 }
 
 void NDTFrame::build()
 {
-    //    if (this->built) {
-    //        return;
-    //    }
+    uint32_t n = static_cast<uint32_t>(floor(this->cell_side / this->_occupancy_grid.cell_size));
 
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
-        if (this->cells[i].created)
-            this->cells[i].build();
+        auto current_cell = &this->cells[i];
+
+        if (current_cell->created) {
+            current_cell->build();
+
+#if BUILD_OCCUPANCY_GRID
+            if (this->_occupancy_grid.cell_size > 0.) {
+                uint32_t ind_x, ind_y;
+
+                ind_x = i % this->widthNumOfCells;
+                ind_y = i / this->heightNumOfCells;
+
+                for (uint32_t j = 0; j < n; ++j) {
+                    for (uint32_t k = 0; k < n; ++k) {
+                        double x, y;
+
+                        x = ((ind_x * n + j) * this->_occupancy_grid.cell_size + this->_occupancy_grid.cell_size / 2.) - (this->width / 2);
+                        y = ((ind_y * n + k) * this->_occupancy_grid.cell_size + this->_occupancy_grid.cell_size / 2.) - (this->height / 2);
+
+                        auto p = current_cell->normalDistribution(Vector2d(x, y)) - 0.5;
+
+                        if (p > 0.) {
+                            this->_occupancy_grid.og[(ind_x * n + j) + this->_occupancy_grid.height * (ind_y * n + k)] = int8_t(p * 100.);
+                        }
+                    }
+                }
+            }
+#endif
+        }
     }
 
     this->built = true;
 }
 
-// Initialize the cell from laser data according to the device sensibility and
-// the minimum angle
+
 void NDTFrame::transform(Vector3d trans)
 {
     if (!trans.isZero(1e-6)) {
