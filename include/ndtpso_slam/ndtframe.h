@@ -39,7 +39,7 @@ public:
         double occupancy_grid_cell_size = .0
 #endif
     );
-    void transform(Vector3d trans);
+    // void transform(Vector3d trans);
     void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& angle_increment, const float& max_range);
     void update(Vector3d trans, NDTFrame* const new_frame);
     void addPoint(Vector2d& point);

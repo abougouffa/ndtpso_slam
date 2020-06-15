@@ -15,8 +15,8 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
     // For all cells in the new frame
     for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
         // Transform the points of the new frame to the reference frame, and sum thiers probabilities
-        for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
-            Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
+        for (unsigned int j = 0; j < new_frame->cells[i].points[0].size(); ++j) {
+            Vector2d point = transform_point(new_frame->cells[i].points[0][j], trans);
             int index_in_ref_frame = ref_frame->getCellIndex(point, ref_frame->widthNumOfCells, ref_frame->cell_side);
 
             if ((-1 != index_in_ref_frame)
@@ -121,25 +121,25 @@ void NDTFrame::build()
     this->built = true;
 }
 
-void NDTFrame::transform(Vector3d trans)
-{
-    if (!trans.isZero(1e-6)) {
-        vector<NDTCell>* old_cells = &this->cells;
+//void NDTFrame::transform(Vector3d trans)
+//{
+//    if (!trans.isZero(1e-6)) {
+//        vector<NDTCell>* old_cells = &this->cells;
 
-        this->cells = vector<NDTCell>(this->numOfCells);
+//        this->cells = vector<NDTCell>(this->numOfCells);
 
-        for (unsigned int i = 0; i < this->numOfCells; ++i)
-            if ((*old_cells)[i].created)
-                for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
-                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
-                    this->addPoint(new_point);
-                }
+//        for (unsigned int i = 0; i < this->numOfCells; ++i)
+//            if ((*old_cells)[i].created)
+//                for (unsigned int j = 0; j < this->cells[i].points->size(); ++j) {
+//                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
+//                    this->addPoint(new_point);
+//                }
 
-        delete old_cells;
+//        delete old_cells;
 
-        this->built = false;
-    }
-}
+//        this->built = false;
+//    }
+//}
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
@@ -193,8 +193,8 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 
     for (unsigned int i = 0; i < new_frame->cells.size(); ++i)
         if (new_frame->cells[i].created)
-            for (unsigned int j = 0; j < new_frame->cells[i].points.size(); ++j) {
-                Vector2d point = transform_point(new_frame->cells[i].points[j], trans);
+            for (unsigned int j = 0; j < new_frame->cells[i].points[0].size(); ++j) {
+                Vector2d point = transform_point(new_frame->cells[i].points[0][j], trans);
                 this->addPoint(point);
             }
 }
@@ -308,15 +308,15 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
 
     // Draw and dump 2D points
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
-        for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
+        for (unsigned int j = 0; j < this->cells[i].points[0].size(); ++j) {
 
-            int x = (size_x / 2) + static_cast<int>(this->cells[i].points[j].x() * density);
-            int y = (size_y / 2) - static_cast<int>(this->cells[i].points[j].y() * density);
+            int x = (size_x / 2) + static_cast<int>(this->cells[i].points[0][j].x() * density);
+            int y = (size_y / 2) - static_cast<int>(this->cells[i].points[0][j].y() * density);
 
             cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
 
             if (save_points) {
-                fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[j].x(), this->cells[i].points[j].y());
+                fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[0][j].x(), this->cells[i].points[0][j].y());
             }
         }
     }

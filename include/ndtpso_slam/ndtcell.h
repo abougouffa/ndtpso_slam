@@ -17,7 +17,7 @@ private:
     inline void _calc_covar_inverse();
 
 public:
-    std::vector<Vector2d> points;
+    std::vector<Vector2d> points[NDT_WINDOW_SIZE];
     Vector2d mean;
     NDTCell();
     void addPoint(Vector2d point);

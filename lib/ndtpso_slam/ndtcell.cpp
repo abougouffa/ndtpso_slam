@@ -24,7 +24,7 @@ void NDTCell::addPoint(Vector2d point)
 {
     this->_current_count++;
     this->_current_partial_sum += point;
-    this->points.push_back(point);
+    this->points[this->_current_window_id].push_back(point);
     this->created = true;
 }
 
@@ -38,11 +38,32 @@ bool NDTCell::build()
 
     if (this->_global_count > 2) {
         this->mean = this->_global_sum / this->_global_count;
+
+        Matrix2d cov;
+        cov << .0, .0,
+            .0, .0;
+
+        Vector2d tmp_pt;
+
+        for (uint16_t j = 0; j < this->_current_count; ++j) {
+            tmp_pt = this->points[this->_current_window_id][j] - this->mean;
+            cov += (tmp_pt * tmp_pt.transpose());
+        }
+
+        this->_global_covar_sum = (this->_global_covar_sum + cov) - this->_partial_covars[this->_current_window_id];
+        this->_partial_covars[this->_current_window_id] = cov;
+
         this->_calc_covar_inverse();
         this->built = true;
     }
 
     this->_current_window_id = (this->_current_window_id + 1) % NDT_WINDOW_SIZE;
+
+    //        if (this->_current_count > 50) {
+    //            delete this->points;
+    //            this->points = new vector<Vector2d>;
+    this->_current_count = 0;
+    //    }
 
     return this->built;
 }
@@ -66,21 +87,18 @@ void NDTCell::reset()
 
 void NDTCell::_calc_covar_inverse()
 {
-    Matrix2d cov;
-    cov << .0, .0,
-        .0, .0;
+    //    Matrix2d cov;
+    //    cov << .0, .0,
+    //        .0, .0;
 
-    Vector2d tmp_pt;
+    //    Vector2d tmp_pt;
 
-    // TODO: This part is totally inconsistant with the NDT window logic,
-    // but it works better than when modified to be consistant
-    for (uint16_t i = 0; i < this->_current_count; ++i) {
-        tmp_pt = this->points[i] - this->mean;
-        cov += (tmp_pt * tmp_pt.transpose());
-    }
-
-    this->_global_covar_sum = (this->_global_covar_sum + cov) - this->_partial_covars[this->_current_window_id];
-    this->_partial_covars[this->_current_window_id] = cov;
+    //    for (size_t i = 0; i < NDT_WINDOW_SIZE; ++i) {
+    //        for (uint16_t j = 0; j < this->_global_count; ++j) {
+    //            tmp_pt = this->points[i][j] - this->mean;
+    //            cov += (tmp_pt * tmp_pt.transpose());
+    //        }
+    //    }
 
     Matrix2d covar = this->_global_covar_sum / this->_global_count;
 
