@@ -34,6 +34,8 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
         this->s_occupancy_grid.height = uint32_t(ceil(height / occupancy_grid_cell_size));
         this->s_occupancy_grid.count = this->s_occupancy_grid.width * this->s_occupancy_grid.height;
         this->s_occupancy_grid.og = vector<int8_t>(this->s_occupancy_grid.count, 0);
+        this->s_occupancy_grid.max_x_ind = this->s_occupancy_grid.max_y_ind = 0;
+        this->s_occupancy_grid.min_x_ind = this->s_occupancy_grid.min_y_ind = UINT32_MAX;
     }
 #endif
 
@@ -83,7 +85,16 @@ void NDTFrame::build()
                         auto p = current_cell->normalDistribution(Vector2d(x, y)) /* - 0.5*/;
 
                         if (p > 0.) {
-                            this->s_occupancy_grid.og[(ind_x * n + j) + this->s_occupancy_grid.height * (ind_y * n + k)] = int8_t(p * 100.);
+                            uint32_t x_ind = ind_x * n + j;
+                            uint32_t y_ind = ind_y * n + k;
+
+                            this->s_occupancy_grid.min_x_ind = MIN(this->s_occupancy_grid.min_x_ind, x_ind);
+                            this->s_occupancy_grid.max_x_ind = MAX(this->s_occupancy_grid.max_x_ind, x_ind);
+
+                            this->s_occupancy_grid.min_y_ind = MIN(this->s_occupancy_grid.min_y_ind, y_ind);
+                            this->s_occupancy_grid.max_y_ind = MAX(this->s_occupancy_grid.max_y_ind, y_ind);
+
+                            this->s_occupancy_grid.og[x_ind + this->s_occupancy_grid.height * y_ind] = int8_t(p * 100.);
                         }
                     }
                 }
@@ -369,20 +380,24 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
     }
 
     if (save_occupancy_grid) {
-        cv::Mat img_og(static_cast<int>(this->s_occupancy_grid.width),
-            static_cast<int>(this->s_occupancy_grid.height),
-            CV_8U, cv::Scalar::all(255));
+        uint32_t real_width = this->s_occupancy_grid.max_x_ind - this->s_occupancy_grid.min_x_ind,
+                 real_heigth = this->s_occupancy_grid.max_y_ind - this->s_occupancy_grid.min_y_ind;
 
-        for (unsigned int i = 0; i < this->s_occupancy_grid.count; ++i) {
-            if (this->s_occupancy_grid.og[i] > 0) {
-                img_og.at<uint8_t>(
-                    int(this->s_occupancy_grid.width - (i / this->s_occupancy_grid.width)),
-                    int(i % this->s_occupancy_grid.height))
-                    = uint8_t(255.0 - this->s_occupancy_grid.og[i] * 2.55);
+        cv::Mat img_og(static_cast<int>(real_heigth), static_cast<int>(real_width), CV_8U, cv::Scalar::all(255));
+
+        for (uint32_t i = this->s_occupancy_grid.min_x_ind; i <= this->s_occupancy_grid.max_x_ind; ++i) {
+            for (uint32_t j = this->s_occupancy_grid.min_y_ind; j <= this->s_occupancy_grid.max_y_ind; ++j) {
+                size_t ind = i + this->s_occupancy_grid.height * j;
+                if (this->s_occupancy_grid.og[ind] > 0) {
+                    img_og.at<uint8_t>(
+                        int(real_heigth - (j - this->s_occupancy_grid.min_y_ind)),
+                        int(i - this->s_occupancy_grid.min_x_ind))
+                        = uint8_t(255.0 - this->s_occupancy_grid.og[i + this->s_occupancy_grid.height * j] * 2.55);
+                }
             }
         }
 
-        sprintf(output_filename, "%s-%dxh%d-c%.2f-occupancy-grid.png",
+        sprintf(output_filename, "%s-%dx%d-cell%.2fm-occupancy-grid.png",
             filename, this->s_occupancy_grid.width, this->s_occupancy_grid.height, this->s_occupancy_grid.cell_size);
 
         imwrite(output_filename, img_og);

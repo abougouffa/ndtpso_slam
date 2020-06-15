@@ -18,9 +18,7 @@ private:
 
 #if BUILD_OCCUPANCY_GRID
     struct {
-        uint32_t count;
-        uint32_t width;
-        uint32_t height;
+        uint32_t count, width, height, max_x_ind, max_y_ind, min_x_ind, min_y_ind;
         double cell_size;
         vector<int8_t> og;
     } s_occupancy_grid;

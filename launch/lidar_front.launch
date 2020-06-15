@@ -1,6 +1,7 @@
 <launch>
     <node name="ndtpso_slam_node" pkg="ndtpso_slam" type="ndtpso_slam_node"
         output="screen">
+<!--        <rosparam param="og_cell_side">0.01</rosparam> -->
         <rosparam param="scan_topic">"/scan_front"</rosparam>
         <rosparam param="scan_frame">"lidar_front"</rosparam>
 <!--        <remap from="~odom" to="/odom"/> -->
