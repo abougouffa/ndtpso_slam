@@ -82,7 +82,10 @@ void NDTCell::reset()
 {
     this->_current_partial_sum << 0, 0;
     this->_current_count = 0;
-    this->points.clear();
+
+    for (auto point : this->points) {
+        point.clear();
+    }
 }
 
 void NDTCell::_calc_covar_inverse()
