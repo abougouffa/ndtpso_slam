@@ -21,7 +21,7 @@
 #define SYNC_WITH_LASER_TOPIC false
 #define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 200
-#define DEFAULT_REF_FRAME_SIZE_M 50.
+#define DEFAULT_REF_FRAME_SIZE_M 100.
 #define DEFAULT_SCAN_TOPIC "/scan_front"
 #define DEFAULT_ODOM_TOPIC "/odom"
 #define DEFAULT_LIDAR_FRAME "lidar_front"
