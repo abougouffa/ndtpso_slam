@@ -10,16 +10,16 @@ using std::vector;
 
 class NDTCell {
 private:
-    Vector2d _frame_sums[NDT_WINDOW_SIZE], _frame_sum, _global_sum;
-    Matrix2d _frame_covars[NDT_WINDOW_SIZE], _global_covar_sum, _inv_covar;
-    int _points_nums[NDT_WINDOW_SIZE], _points_num, _global_points_num;
+    Vector2d _partial_sums[NDT_WINDOW_SIZE], _current_partial_sum, _global_sum;
+    Matrix2d _partial_covars[NDT_WINDOW_SIZE], _global_covar_sum, _inv_covar;
+    int _partial_counts[NDT_WINDOW_SIZE], _current_count, _global_count;
+    size_t _current_window_id;
     inline void _calc_covar_inverse();
 
 public:
-    unsigned int frame_count;
     std::vector<Vector2d> points;
     Vector2d mean;
-    NDTCell(std::vector<Vector2d> points = {});
+    NDTCell();
     void addPoint(Vector2d point);
     bool built;
     bool created;
