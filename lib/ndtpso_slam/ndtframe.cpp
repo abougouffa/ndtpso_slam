@@ -31,9 +31,13 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
     return trans_cost;
 }
 
-NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, bool positive_only)
+NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side
+#if BUILD_OCCUPANCY_GRID
+    ,
+    double occupancy_grid_cell_size
+#endif
+    )
     : _trans(trans)
-    , _positive_only(positive_only)
     , width(width)
     , height(height)
     , cell_side(cell_side)
@@ -211,7 +215,12 @@ Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
     return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
 }
 
-void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_points, bool save_image, short density)
+void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_points, bool save_image, short density
+#if BUILD_OCCUPANCY_GRID
+    ,
+    bool save_occupancy_grid
+#endif
+)
 {
     // Save the points, poses & odoms to an image, useful for debugging!
     int size_x = this->width * density, // density in "pixel per meter"

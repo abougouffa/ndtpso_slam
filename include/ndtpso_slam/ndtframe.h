@@ -17,13 +17,28 @@ private:
     double _x_min, _x_max, _y_min, _y_max;
     NdtPsoConfig _config;
 
+#if BUILD_OCCUPANCY_GRID
+    struct {
+        uint32_t count;
+        uint32_t width;
+        uint32_t height;
+        double cell_size;
+        vector<int8_t> og;
+    } _occupancy_grid;
+#endif
+
 public:
     uint16_t width, height, widthNumOfCells, heightNumOfCells;
     vector<NDTCell> cells;
     bool built;
     unsigned int numOfCells;
     double cell_side;
-    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0, bool positive_only = false);
+    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0
+#if BUILD_OCCUPANCY_GRID
+        ,
+        double occupancy_grid_cell_size = .0
+#endif
+    );
     void transform(Vector3d trans);
     void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& angle_increment, const float& max_range);
     void update(Vector3d trans, NDTFrame* const new_frame);
@@ -35,7 +50,12 @@ public:
     void build();
     int getCellIndex(Vector2d point, int grid_width, double cell_side);
     Vector3d align(Vector3d initial_guess, NDTFrame* const new_frame);
-    void dumpMap(const char* const filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50);
+    void dumpMap(const char* const filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50
+#if BUILD_OCCUPANCY_GRID
+        ,
+        bool save_occupancy_grid = true
+#endif
+    );
     void addPose(double timestamp, Vector3d pose, Vector3d odom = Vector3d::Zero());
     void resetCells();
 };
