@@ -142,6 +142,8 @@ void NDTFrame::transform(Vector3d trans)
     }
 }
 
+// Initialize the cell from laser data according to the device sensibility and
+// the minimum angle
 void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle, float const& angle_increment, float const& max_range)
 {
     this->built = false;
