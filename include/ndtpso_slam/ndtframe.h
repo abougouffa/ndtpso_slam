@@ -10,11 +10,11 @@ using std::vector;
 
 class NDTFrame {
 private:
-    Vector3d _trans;
-    vector<Vector3d> _poses, _odoms;
-    vector<double> _timestamps;
-    double _x_min, _x_max, _y_min, _y_max;
-    NdtPsoConfig _config;
+    Vector3d s_trans;
+    vector<Vector3d> s_poses, s_odoms;
+    vector<double> s_timestamps;
+    double s_x_min, s_x_max, s_y_min, s_y_max;
+    NdtPsoConfig s_config;
 
 #if BUILD_OCCUPANCY_GRID
     struct {
@@ -23,7 +23,7 @@ private:
         uint32_t height;
         double cell_size;
         vector<int8_t> og;
-    } _occupancy_grid;
+    } s_occupancy_grid;
 #endif
 
 public:
@@ -42,7 +42,7 @@ public:
     void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& angle_increment, const float& max_range);
     void update(Vector3d trans, NDTFrame* const new_frame);
     void addPoint(Vector2d& point);
-    inline void setTrans(Vector3d trans) { this->_trans = trans; }
+    inline void setTrans(Vector3d trans) { this->s_trans = trans; }
 #if defined(DEBUG) && DEBUG
     void print();
 #endif

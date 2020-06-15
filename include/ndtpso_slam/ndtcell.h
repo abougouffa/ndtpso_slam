@@ -10,11 +10,11 @@ using std::vector;
 
 class NDTCell {
 private:
-    Vector2d _partial_sums[NDT_WINDOW_SIZE], _current_partial_sum, _global_sum;
-    Matrix2d _partial_covars[NDT_WINDOW_SIZE], _global_covar_sum, _inv_covar;
-    int _partial_counts[NDT_WINDOW_SIZE], _current_count, _global_count;
-    size_t _current_window_id;
-    inline void _calc_covar_inverse();
+    Vector2d s_partial_sums[NDT_WINDOW_SIZE], s_current_partial_sum, s_global_sum;
+    Matrix2d s_partial_covars[NDT_WINDOW_SIZE], s_global_covar_sum, s_inv_covar;
+    int s_partial_counts[NDT_WINDOW_SIZE], s_current_count, s_global_count;
+    size_t s_current_window_id;
+    inline void s_calc_covar_inverse();
 
 public:
     std::vector<Vector2d> points[NDT_WINDOW_SIZE];

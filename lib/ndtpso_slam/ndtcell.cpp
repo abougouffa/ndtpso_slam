@@ -3,67 +3,67 @@
 #include <stdio.h>
 
 NDTCell::NDTCell(bool calculate_params)
-    : _current_count(0)
-    , _current_window_id(0)
+    : s_current_count(0)
+    , s_current_window_id(0)
     , built(false)
     , created(false)
 {
     if (calculate_params) {
         for (unsigned int i = 0; i < NDT_WINDOW_SIZE; ++i) {
-            this->_partial_sums[i] = Vector2d::Zero();
-            this->_partial_counts[i] = 0;
-            this->_partial_covars[i] = Matrix2d::Zero();
+            this->s_partial_sums[i] = Vector2d::Zero();
+            this->s_partial_counts[i] = 0;
+            this->s_partial_covars[i] = Matrix2d::Zero();
         }
 
-        this->_global_sum = Vector2d::Zero();
-        this->_global_covar_sum = Matrix2d::Zero();
-        this->_global_count = 0;
+        this->s_global_sum = Vector2d::Zero();
+        this->s_global_covar_sum = Matrix2d::Zero();
+        this->s_global_count = 0;
     }
 
-    this->_current_partial_sum = Vector2d::Zero();
-    this->_current_count = 0;
-    this->_current_window_id = 0;
+    this->s_current_partial_sum = Vector2d::Zero();
+    this->s_current_count = 0;
+    this->s_current_window_id = 0;
 }
 
 void NDTCell::addPoint(Vector2d point)
 {
-    this->_current_count++;
-    this->_current_partial_sum += point;
-    this->points[this->_current_window_id].push_back(point);
+    this->s_current_count++;
+    this->s_current_partial_sum += point;
+    this->points[this->s_current_window_id].push_back(point);
     this->created = true;
 }
 
 bool NDTCell::build()
 {
-    this->_global_sum = this->_global_sum + this->_current_partial_sum - this->_partial_sums[this->_current_window_id];
-    this->_partial_sums[this->_current_window_id] = this->_current_partial_sum;
+    this->s_global_sum = this->s_global_sum + this->s_current_partial_sum - this->s_partial_sums[this->s_current_window_id];
+    this->s_partial_sums[this->s_current_window_id] = this->s_current_partial_sum;
 
-    this->_global_count = this->_global_count + this->_current_count - this->_partial_counts[this->_current_window_id];
-    this->_partial_counts[this->_current_window_id] = this->_current_count;
+    this->s_global_count = this->s_global_count + this->s_current_count - this->s_partial_counts[this->s_current_window_id];
+    this->s_partial_counts[this->s_current_window_id] = this->s_current_count;
 
-    if (this->_global_count > 2) {
-        this->mean = this->_global_sum / this->_global_count;
+    if (this->s_global_count > 2) {
+        this->mean = this->s_global_sum / this->s_global_count;
 
         Matrix2d cov = Matrix2d::Zero();
 
         Vector2d tmp_pt;
 
-        for (uint16_t j = 0; j < this->_current_count; ++j) {
-            tmp_pt = this->points[this->_current_window_id][j] - this->mean;
+        for (uint16_t j = 0; j < this->s_current_count; ++j) {
+            tmp_pt = this->points[this->s_current_window_id][j] - this->mean;
             cov += (tmp_pt * tmp_pt.transpose());
         }
 
-        this->_global_covar_sum = (this->_global_covar_sum + cov) - this->_partial_covars[this->_current_window_id];
-        this->_partial_covars[this->_current_window_id] = cov;
+        this->s_global_covar_sum = (this->s_global_covar_sum + cov) - this->s_partial_covars[this->s_current_window_id];
+        this->s_partial_covars[this->s_current_window_id] = cov;
 
-        this->_calc_covar_inverse();
+        this->s_calc_covar_inverse();
         this->built = true;
     }
 
-    this->_current_window_id = (this->_current_window_id + 1) % NDT_WINDOW_SIZE;
+    this->s_current_window_id = (this->s_current_window_id + 1) % NDT_WINDOW_SIZE;
 
-    this->_current_count = 0;
-    this->_current_partial_sum = Vector2d::Zero();
+    this->s_current_count = 0;
+    this->s_current_partial_sum = Vector2d::Zero();
 
     return this->built;
 }
@@ -72,7 +72,7 @@ double NDTCell::normalDistribution(Vector2d point)
 {
     if (this->built) {
         Vector2d diff = point - this->mean;
-        return exp(-static_cast<double>((diff.transpose() * this->_inv_covar) * diff) / 2.) /* + .5*/;
+        return exp(-static_cast<double>((diff.transpose() * this->s_inv_covar) * diff) / 2.) /* + .5*/;
     } else {
         return 0;
     }
@@ -80,19 +80,19 @@ double NDTCell::normalDistribution(Vector2d point)
 
 void NDTCell::reset()
 {
-    this->_current_partial_sum = Vector2d::Zero();
-    this->_global_sum = Vector2d::Zero();
-    this->_current_count = 0;
-    this->_global_count = 0;
-    this->_global_covar_sum = Matrix2d::Zero();
-    this->_current_window_id = 0;
+    this->s_current_partial_sum = Vector2d::Zero();
+    this->s_global_sum = Vector2d::Zero();
+    this->s_current_count = 0;
+    this->s_global_count = 0;
+    this->s_global_covar_sum = Matrix2d::Zero();
+    this->s_current_window_id = 0;
 
     for (auto& point : this->points) {
         point.clear();
     }
 }
 
-void NDTCell::_calc_covar_inverse()
+void NDTCell::s_calc_covar_inverse()
 {
     //    Matrix2d cov;
     //    cov << .0, .0,
@@ -101,13 +101,13 @@ void NDTCell::_calc_covar_inverse()
     //    Vector2d tmp_pt;
 
     //    for (size_t i = 0; i < NDT_WINDOW_SIZE; ++i) {
-    //        for (uint16_t j = 0; j < this->_global_count; ++j) {
+    //        for (uint16_t j = 0; j < this->s_global_count; ++j) {
     //            tmp_pt = this->points[i][j] - this->mean;
     //            cov += (tmp_pt * tmp_pt.transpose());
     //        }
     //    }
 
-    Matrix2d covar = this->_global_covar_sum / this->_global_count;
+    Matrix2d covar = this->s_global_covar_sum / this->s_global_count;
 
     EigenSolver<Matrix2d> eigenval_solver(covar);
     Vector2d eigenvals = eigenval_solver.pseudoEigenvalueMatrix().diagonal();
@@ -121,6 +121,6 @@ void NDTCell::_calc_covar_inverse()
     else
         large_val = covar.determinant();
 
-    this->_inv_covar << covar(1, 1) / large_val, -covar(0, 1) / large_val,
+    this->s_inv_covar << covar(1, 1) / large_val, -covar(0, 1) / large_val,
         -covar(1, 0) / large_val, covar(0, 0) / large_val;
 }
