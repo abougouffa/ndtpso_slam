@@ -6,6 +6,7 @@
 #define LASER_IGNORE_EPSILON 0.1f // Ignore points around the origin with 10cm
 #define USING_TRANS true
 #define PREFER_FRONTAL_POINTS false // Disabled
+#define BUILD_OCCUPANCY_GRID true
 
 // PSO parameters
 #define PSO_ITERATIONS 50
