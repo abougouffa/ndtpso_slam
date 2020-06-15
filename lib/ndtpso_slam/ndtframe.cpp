@@ -298,9 +298,17 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
     int counter = 0;
 
     cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
+
     // cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
 
-    for (unsigned int i = 0; i < this->numOfCells; ++i)
+    // Draw a grid (using `density` as increment, we draw a line each 1 meter)
+    for (int i = 0; i < size_x; i += density) {
+        cv::line(img, cv::Point(i, 0), cv::Point(i, size_y), cv::Scalar(180, 180, 180));
+        cv::line(img, cv::Point(0, i), cv::Point(size_x, i), cv::Scalar(180, 180, 180));
+    }
+
+    // Draw and dump 2D points
+    for (unsigned int i = 0; i < this->numOfCells; ++i) {
         for (unsigned int j = 0; j < this->cells[i].points.size(); ++j) {
 
             int x = (size_x / 2) + static_cast<int>(this->cells[i].points[j].x() * density);
@@ -312,7 +320,9 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
                 fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[j].x(), this->cells[i].points[j].y());
             }
         }
+    }
 
+    // Draw and dump poses and odometries
     for (unsigned i = 0; i < this->_odoms.size(); ++i) {
         int x = (size_x / 2) + static_cast<int>(this->_odoms[i].x() * density);
         int y = (size_y / 2) - static_cast<int>(this->_odoms[i].y() * density);
