@@ -4,14 +4,27 @@
 #include <opencv/cv.hpp>
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
+#include <utility>
 
-NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, double cell_side, bool calculate_cells_params
+#ifndef MIN
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+#endif
+
+#ifndef MAX
+#define MAX(a, b) ((a) < (b) ? (b) : (a))
+#endif
+
+NDTFrame::NDTFrame(Vector3d trans,
+    unsigned short width,
+    unsigned short height,
+    double cell_side,
+    bool calculate_cells_params
 #if BUILD_OCCUPANCY_GRID
     ,
     double occupancy_grid_cell_size
 #endif
     )
-    : s_trans(trans)
+    : s_trans(std::move(trans))
     , width(width)
     , height(height)
     , cell_side(cell_side)
@@ -34,33 +47,33 @@ NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height, 
         this->s_occupancy_grid.height = uint32_t(ceil(height / occupancy_grid_cell_size));
         this->s_occupancy_grid.count = this->s_occupancy_grid.width * this->s_occupancy_grid.height;
         this->s_occupancy_grid.og = vector<int8_t>(this->s_occupancy_grid.count, 0);
-        this->s_occupancy_grid.max_x_ind = this->s_occupancy_grid.max_y_ind = 0;
-        this->s_occupancy_grid.min_x_ind = this->s_occupancy_grid.min_y_ind = UINT32_MAX;
     }
 #endif
 
+#if false
     /*
-    // TODO: Needs to be generic !!
+    TODO: Needs to be generic !!
+    */
+
     if (positive_only) {
         this->s_x_min = -7.2; // <-- here
         this->s_x_max = width - 8.2; // <-- and here!
     } else {
-        this->s_x_min = -width / 2.;
-        this->s_x_max = width / 2.;
-    }
-
-    Deleted `positive_only` parameter, now this is simply:
-    */
-
+#endif
     this->s_x_min = -width / 2.;
     this->s_x_max = width / 2.;
+
+#if false
+    }
+#endif
+
     this->s_y_min = -height / 2.;
     this->s_y_max = height / 2.;
 }
 
 void NDTFrame::build()
 {
-    uint32_t n = static_cast<uint32_t>(floor(this->cell_side / this->s_occupancy_grid.cell_size));
+    auto og_cells_per_cell = static_cast<uint32_t>(floor(this->cell_side / this->s_occupancy_grid.cell_size));
 
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         auto current_cell = &this->cells[i];
@@ -70,31 +83,37 @@ void NDTFrame::build()
 
 #if BUILD_OCCUPANCY_GRID
             if (this->s_occupancy_grid.cell_size > 0.) {
-                uint32_t ind_x, ind_y;
+                uint32_t cell_x_ind = i % this->widthNumOfCells,
+                         cell_y_ind = i / this->heightNumOfCells;
 
-                ind_x = i % this->widthNumOfCells;
-                ind_y = i / this->heightNumOfCells;
+                for (uint32_t j = 0; j < og_cells_per_cell; ++j) {
+                    for (uint32_t k = 0; k < og_cells_per_cell; ++k) {
+                        double x_c = ((cell_x_ind * og_cells_per_cell + j)
+                                             * this->s_occupancy_grid.cell_size
+                                         + this->s_occupancy_grid.cell_size / 2.)
+                            - (this->width / 2.);
 
-                for (uint32_t j = 0; j < n; ++j) {
-                    for (uint32_t k = 0; k < n; ++k) {
-                        double x, y;
+                        double y_c = ((cell_y_ind * og_cells_per_cell + k)
+                                             * this->s_occupancy_grid.cell_size
+                                         + this->s_occupancy_grid.cell_size / 2.)
+                            - (this->height / 2.);
 
-                        x = ((ind_x * n + j) * this->s_occupancy_grid.cell_size + this->s_occupancy_grid.cell_size / 2.) - (this->width / 2);
-                        y = ((ind_y * n + k) * this->s_occupancy_grid.cell_size + this->s_occupancy_grid.cell_size / 2.) - (this->height / 2);
-
-                        auto p = current_cell->normalDistribution(Vector2d(x, y)) /* - 0.5*/;
+                        auto p = current_cell->normalDistribution(Vector2d(x_c, y_c)) /* - 0.5*/;
 
                         if (p > 0.) {
-                            uint32_t x_ind = ind_x * n + j;
-                            uint32_t y_ind = ind_y * n + k;
+                            uint32_t og_x_ind = cell_x_ind * og_cells_per_cell + j;
+                            uint32_t og_y_ind = cell_y_ind * og_cells_per_cell + k;
 
-                            this->s_occupancy_grid.min_x_ind = MIN(this->s_occupancy_grid.min_x_ind, x_ind);
-                            this->s_occupancy_grid.max_x_ind = MAX(this->s_occupancy_grid.max_x_ind, x_ind);
+                            /*
+                             * TODO: move this outside to store the max/min x and y, as coordinates not as indexes,
+                             * so the same info can be used with the point cloud map
+                             */
+                            this->s_occupancy_grid.min_x_ind = MIN(og_x_ind, this->s_occupancy_grid.min_x_ind);
+                            this->s_occupancy_grid.max_x_ind = MAX(og_x_ind, this->s_occupancy_grid.max_x_ind);
+                            this->s_occupancy_grid.min_y_ind = MIN(og_y_ind, this->s_occupancy_grid.min_y_ind);
+                            this->s_occupancy_grid.max_y_ind = MAX(og_y_ind, this->s_occupancy_grid.max_y_ind);
 
-                            this->s_occupancy_grid.min_y_ind = MIN(this->s_occupancy_grid.min_y_ind, y_ind);
-                            this->s_occupancy_grid.max_y_ind = MAX(this->s_occupancy_grid.max_y_ind, y_ind);
-
-                            this->s_occupancy_grid.og[x_ind + this->s_occupancy_grid.height * y_ind] = int8_t(p * 100.);
+                            this->s_occupancy_grid.og[og_x_ind + this->s_occupancy_grid.height * og_y_ind] = int8_t(p * 100.);
                         }
                     }
                 }
@@ -130,10 +149,13 @@ void NDTFrame::transform(Vector3d trans)
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
-void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle, float const& angle_increment, float const& max_range)
+void NDTFrame::loadLaser(vector<float> const& laser_data,
+    float const& min_angle,
+    float const& angle_increment,
+    float const& max_range)
 {
     this->built = false;
-    unsigned int n = static_cast<unsigned int>(laser_data.size());
+    auto n = static_cast<unsigned int>(laser_data.size());
 
 #if USING_TRANS
     // Define a function 'f' to do transformation if needed
@@ -178,15 +200,17 @@ void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
 {
     this->built = false; // Set 'built' flag to false to rebuild the cell if needed
 
-    for (unsigned int i = 0; i < new_frame->cells.size(); ++i)
-        if (new_frame->cells[i].created)
-            for (unsigned int j = 0; j < new_frame->cells[i].points[0].size(); ++j) {
-                Vector2d point = transform_point(new_frame->cells[i].points[0][j], trans);
-                this->addPoint(point);
+    for (auto& new_frame_cell : new_frame->cells) {
+        if (new_frame_cell.created) {
+            for (auto& point : new_frame_cell.points[0]) {
+                Vector2d pt = transform_point(point, trans);
+                this->addPoint(pt);
             }
+        }
+    }
 }
 
-void NDTFrame::addPose(double timestamp, Vector3d pose, Vector3d odom)
+void NDTFrame::addPose(double timestamp, const Vector3d& pose, const Vector3d& odom)
 {
     // Used only for saving the global map image (if any), for scan matching; there is no need for this. Useful for debug
     this->s_timestamps.push_back(timestamp);
@@ -196,7 +220,7 @@ void NDTFrame::addPose(double timestamp, Vector3d pose, Vector3d odom)
 
 void NDTFrame::resetCells()
 {
-    unsigned int n = unsigned(this->cells.size());
+    auto n = static_cast<unsigned int>(this->cells.size());
     for (unsigned int i = 0; i < n; ++i)
         this->cells[i].reset();
 }
@@ -237,18 +261,18 @@ int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
         // Then return the index of the its corresponding CELL
         return static_cast<int>(floor((point.x() + (this->width / 2.)) / cell_side)
             + grid_width * (floor((point.y() + (this->height / 2.)) / cell_side)));
-    } else {
-        return -1;
     }
+
+    return -1;
 }
 
 Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 {
     Vector3d deviation = Vector3d(.1, .1, 3.1415E-3); // Used to UNIFORMLY distribute the initial particles
-    return pso_optimization(initial_guess, this, new_frame, PSO_ITERATIONS, deviation);
+    return pso_optimization(std::move(initial_guess), this, new_frame, PSO_ITERATIONS, deviation);
 }
 
-void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_points, bool save_image, short density
+void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, bool save_image, short density
 #if BUILD_OCCUPANCY_GRID
     ,
     bool save_occupancy_grid
@@ -294,26 +318,30 @@ void NDTFrame::dumpMap(const char* const filename, bool save_poses, bool save_po
     }
 
     // Draw and dump 2D points
-    for (unsigned int i = 0; i < this->numOfCells; ++i) {
-        for (unsigned int j = 0; j < this->cells[i].points[0].size(); ++j) {
+    //for (unsigned int i = 0; i < this->numOfCells; ++i) {
+    for (auto& cell : this->cells) {
+        for (auto& points : cell.points) {
+            for (auto& point : points) {
+                // for (unsigned int j = 0; j < points.size(); ++j) {
+                int x = (size_x / 2) + static_cast<int>(point.x() * density);
+                int y = (size_y / 2) - static_cast<int>(point.y() * density);
 
-            int x = (size_x / 2) + static_cast<int>(this->cells[i].points[0][j].x() * density);
-            int y = (size_y / 2) - static_cast<int>(this->cells[i].points[0][j].y() * density);
+                cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
 
-            cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
-
-            if (save_points) {
-                fprintf(hndl_points, "%.5f,%.5f\n", this->cells[i].points[0][j].x(), this->cells[i].points[0][j].y());
+                if (save_points) {
+                    fprintf(hndl_points, "%.5f,%.5f\n", point.x(), point.y());
+                    // }
+                }
             }
         }
     }
 
     // Draw and dump poses and odometries
-    for (unsigned i = 0; i < this->s_odoms.size(); ++i) {
-        int x = (size_x / 2) + static_cast<int>(this->s_odoms[i].x() * density);
-        int y = (size_y / 2) - static_cast<int>(this->s_odoms[i].y() * density);
-        int dx = static_cast<int>(.5 * cos(-this->s_odoms[i].z()) * density);
-        int dy = static_cast<int>(.5 * sin(-this->s_odoms[i].z()) * density);
+    for (unsigned int i = 0; i < this->s_odoms.size(); ++i) {
+        auto x = (size_x / 2) + static_cast<int>(this->s_odoms[i].x() * density),
+             y = (size_y / 2) - static_cast<int>(this->s_odoms[i].y() * density),
+             dx = static_cast<int>(.5 * cos(-this->s_odoms[i].z()) * density),
+             dy = static_cast<int>(.5 * sin(-this->s_odoms[i].z()) * density);
 
         if (0 == counter) {
             cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(100, 50, 0));

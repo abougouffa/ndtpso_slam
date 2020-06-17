@@ -4,15 +4,15 @@
 #include <iostream>
 #include <omp.h>
 
-using std::cout;
-
 struct Particle {
     Vector3d position, velocity, best_position;
     double best_cost;
     double cost;
     double pbest_average;
 
-    Particle(Array3d mean, Array3d deviation, NDTFrame* const ref_frame,
+    Particle(const Array3d& mean,
+        const Array3d& deviation,
+        NDTFrame* const ref_frame,
         NDTFrame* const new_frame)
         : position(mean + (Array3d::Random() * deviation)) /* Randomly place the particles according to the mean and the deviation */
         , velocity(Vector3d(0., 0., 0.))
@@ -33,10 +33,10 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
     double trans_cost = 0.;
 
     // For all cells in the new frame
-    for (unsigned int i = 0; i < new_frame->numOfCells; ++i) {
+    for (auto& new_frame_cell : new_frame->cells) {
         // Transform the points of the new frame to the reference frame, and sum thiers probabilities
-        for (unsigned int j = 0; j < new_frame->cells[i].points[0].size(); ++j) {
-            Vector2d point = transform_point(new_frame->cells[i].points[0][j], trans);
+        for (auto& new_point : new_frame_cell.points[0]) {
+            Vector2d point = transform_point(new_point, trans);
             int index_in_ref_frame = ref_frame->getCellIndex(point, ref_frame->widthNumOfCells, ref_frame->cell_side);
 
             if ((-1 != index_in_ref_frame)
@@ -51,7 +51,11 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
     return trans_cost;
 }
 
-Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
+Vector3d pso_optimization(Vector3d initial_guess,
+    NDTFrame* const ref_frame,
+    NDTFrame* const new_frame,
+    unsigned int iters_num,
+    const Array3d& deviation)
 {
     double w = PSO_W, c1 = PSO_C1, c2 = PSO_C2, w_damping_coef = PSO_W_DUMPING_COEF;
     Array3d zero_devi; /* TODO: why I used an array to store a 3D vector deviation?! */
@@ -63,7 +67,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
     Particle global_best(initial_guess.array(), zero_devi, ref_frame, new_frame);
 
     for (unsigned int i = 0; i < PSO_POPULATION_SIZE; ++i) {
-        particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
+        particles.emplace_back(initial_guess.array(), deviation, ref_frame, new_frame);
 
         if (particles[i].cost < global_best.best_cost) {
             // TODO: see if the global best need to stay fixed (like in this case) or should we just preserve it's ID
@@ -121,7 +125,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDT
 }
 
 // UNTESTED implementation of GLIR-PSO [ref.]
-Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, Array3d deviation)
+Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame, NDTFrame* const new_frame, unsigned int iters_num, const Array3d& deviation)
 {
     double omega = 1., c1 = 2., c2 = 2.;
     Array3d zero_devi;
@@ -134,10 +138,10 @@ Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* const ref_frame
     unsigned int iter_n = 0;
 #endif
 
-    particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
+    particles.emplace_back(initial_guess.array(), deviation, ref_frame, new_frame);
 
     for (unsigned int i = 0; i < PSO_POPULATION_SIZE; ++i) {
-        particles.push_back(Particle(initial_guess.array(), deviation, ref_frame, new_frame));
+        particles.emplace_back(initial_guess.array(), deviation, ref_frame, new_frame);
 
         if (particles[i].cost < global_best.best_cost) {
             global_best.best_cost = particles[i].best_cost;
