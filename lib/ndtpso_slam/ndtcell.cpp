@@ -21,30 +21,41 @@ NDTCell::NDTCell(bool calculate_params)
 
 void NDTCell::addPoint(const Vector2d& point)
 {
+    if (0 == this->s_current_count) {
+        // For the first call after building the cell (so the first call after the previous iteration)
+        // we reset all the points of the corresponding iteration in the points buffer
+        this->points[this->s_current_window_id] = vector<Vector2d>();
+    }
+
     this->s_current_count++;
     this->s_current_partial_sum += point;
     this->points[this->s_current_window_id].push_back(point);
     this->created = true;
+    this->built = false;
 }
 
 bool NDTCell::build()
 {
-    this->s_global_sum = this->s_global_sum + this->s_current_partial_sum - this->s_partial_sums[this->s_current_window_id];
-    this->s_partial_sums[this->s_current_window_id] = this->s_current_partial_sum;
+    // Managing the circular buffer "the window" in a constant time
+    this->s_global_sum = this->s_global_sum // The global sum
+        + this->s_current_partial_sum // plus the currnet partial sum
+        - this->s_partial_sums[this->s_current_window_id]; // Minus the partial sum of the item we will replace with the current partial sum
+    this->s_partial_sums[this->s_current_window_id] = this->s_current_partial_sum; // We replace the item
 
-    this->s_global_count = this->s_global_count + this->s_current_count - this->s_partial_counts[this->s_current_window_id];
+    this->s_global_count = this->s_global_count
+        + this->s_current_count
+        - this->s_partial_counts[this->s_current_window_id];
     this->s_partial_counts[this->s_current_window_id] = this->s_current_count;
 
     if (this->s_global_count > 2) {
         this->mean = this->s_global_sum / this->s_global_count;
 
         Matrix2d cov = Matrix2d::Zero();
+        Vector2d distance_from_mean;
 
-        Vector2d tmp_pt;
-
-        for (uint16_t j = 0; j < this->s_current_count; ++j) {
-            tmp_pt = this->points[this->s_current_window_id][j] - this->mean;
-            cov += (tmp_pt * tmp_pt.transpose());
+        for (auto& pt : this->points[this->s_current_window_id]) {
+            distance_from_mean = pt - this->mean;
+            cov += (distance_from_mean * distance_from_mean.transpose());
         }
 
         this->s_global_covar_sum = (this->s_global_covar_sum + cov) - this->s_partial_covars[this->s_current_window_id];
@@ -54,10 +65,12 @@ bool NDTCell::build()
         this->built = true;
     }
 
-    this->s_current_window_id = (this->s_current_window_id + 1) % NDT_WINDOW_SIZE;
 
-    this->s_current_count = 0;
-    this->s_current_partial_sum = Vector2d::Zero();
+    if (this->s_current_count > NDT_MIN_POINTS_PER_CELL) {
+        this->s_current_window_id = (this->s_current_window_id + 1) % NDT_WINDOW_SIZE;
+        this->s_current_count = 0;
+        this->s_current_partial_sum = Vector2d::Zero();
+    }
 
     return this->built;
 }

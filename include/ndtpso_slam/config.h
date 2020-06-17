@@ -3,7 +3,7 @@
 
 // Default values
 #define NDT_WINDOW_SIZE 100
-#define NDT_MAX_POINTS_PER_CELL 100 // Unused now, to be used to limit the points/cell by a circular buffer, to ensure const memory
+#define NDT_MIN_POINTS_PER_CELL 10
 #define LASER_IGNORE_EPSILON 0.1f // Ignore points around the origin with 10cm
 #define USING_TRANS true
 #define PREFER_FRONTAL_POINTS false // Disabled

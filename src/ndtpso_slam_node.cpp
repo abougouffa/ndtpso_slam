@@ -16,8 +16,8 @@
 
 #define NDTPSO_SLAM_VERSION "1.2.0"
 
-#define SAVE_DATA_TO_FILE true
-#define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 1
+#define SAVE_MAP_DATA_TO_FILE true
+#define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 10
 #define SYNC_WITH_LASER_TOPIC false
 #define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 100
@@ -51,7 +51,7 @@ static Vector3d global_trans, previous_pose, trans_estimate, initial_pose;
 static NDTFrame* current_frame;
 static NDTFrame* ref_frame;
 
-#if defined(SAVE_DATA_TO_FILE) && SAVE_DATA_TO_FILE
+#if SAVE_MAP_DATA_TO_FILE
 static NDTFrame* global_map;
 #endif
 
@@ -61,7 +61,7 @@ static geometry_msgs::PoseStamped current_pub_pose;
 // The odometry is used just for the initial pose to be easily compared with our calculated pose
 void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::OdometryConstPtr& odom)
 {
-#if SAVE_DATA_TO_FILE
+#if SAVE_MAP_DATA_TO_FILE
     static unsigned int iter_num = 0;
 #endif
     matcher_mutex.lock();
@@ -94,7 +94,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     previous_pose = current_pose;
     ref_frame->update(current_pose, current_frame);
 
-#if SAVE_DATA_TO_FILE
+#if SAVE_MAP_DATA_TO_FILE
     if (iter_num == 0)
         global_map->update(current_pose, current_frame);
     iter_num = (iter_num + 1) % SAVE_DATA_TO_FILE_EACH_NUM_ITERS;
@@ -210,7 +210,7 @@ int main(int argc, char** argv)
 #endif
     );
 
-#if SAVE_DATA_TO_FILE
+#if SAVE_MAP_DATA_TO_FILE
     global_map = new NDTFrame(Vector3d::Zero(),
         static_cast<unsigned short>(param_map_size),
         static_cast<unsigned short>(param_map_size),
@@ -278,16 +278,16 @@ int main(int argc, char** argv)
         loop_rate.sleep();
     }
 
-#if SAVE_DATA_TO_FILE
     cout << endl
          << "Exporting results "
          << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
     char filename[256];
-    // param_scan_topic = param_scan_topic.replace("/", "-");
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
+    // param_scan_topic = param_scan_topic.replace("/", "-");
+#if SAVE_MAP_DATA_TO_FILE
     global_map->dumpMap(filename, true, true, true, 200, false);
+#endif
     cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
     sprintf(filename, "%s-%d-ref-frame", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
-    ref_frame->dumpMap(filename, false, false, false, 0, true);
-#endif
+    ref_frame->dumpMap(filename, true, true, true, 200, true);
 }
