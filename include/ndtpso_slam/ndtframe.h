@@ -41,9 +41,10 @@ public:
         unsigned short width = 20,
         unsigned short height = 20,
         double cell_side = 1.0,
-        bool calculate_cells_params = true
+        bool calculate_cells_params = true,
+        NDTPSOConfig config = NDTPSOConfig()
 #if BUILD_OCCUPANCY_GRID
-        ,
+            ,
         double occupancy_grid_cell_size = .0
 #endif
     );

@@ -2,10 +2,10 @@
 #define CONFIG_H
 
 // Default values
-#define NDT_WINDOW_SIZE 100
-#define NDT_MIN_POINTS_PER_CELL 20
+#define NDT_MAX_POINTS_PER_CELL 20
 #define LASER_IGNORE_EPSILON 0.1f // Ignore points around the origin with 10cm
 
+#define NDT_WINDOW_SIZE 100
 #define USING_TRANS true
 #define PREFER_FRONTAL_POINTS false // Disabled
 #define BUILD_OCCUPANCY_GRID true
@@ -37,7 +37,8 @@ struct PSOConfig {
 
 struct NDTPSOConfig {
     PSOConfig psoConfig;
-    unsigned int ndtWindowSize{ NDT_WINDOW_SIZE };
+    // unsigned int ndtWindowSize{ NDT_WINDOW_SIZE };
+    // unsigned int maxPointsPerCell{ NDT_MAX_POINTS_PER_CELL };
     float laserIgnoreEpsilon{ LASER_IGNORE_EPSILON };
 };
 

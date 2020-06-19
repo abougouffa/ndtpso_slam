@@ -203,9 +203,10 @@ int main(int argc, char** argv)
         static_cast<unsigned short>(param_frame_size),
         static_cast<unsigned short>(param_frame_size),
         param_cell_side,
-        true
+        true,
+        NDTPSOConfig()
 #if BUILD_OCCUPANCY_GRID
-        ,
+            ,
         param_occupancy_grid_cell_side
 #endif
     );

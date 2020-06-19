@@ -65,7 +65,7 @@ bool NDTCell::build()
         this->built = true;
     }
 
-    if (this->s_current_count > NDT_MIN_POINTS_PER_CELL) {
+    if (this->s_current_count > NDT_MAX_POINTS_PER_CELL) {
         this->s_current_window_id = (this->s_current_window_id + 1) % NDT_WINDOW_SIZE;
         this->s_current_count = 0;
         this->s_current_partial_sum = Vector2d::Zero();

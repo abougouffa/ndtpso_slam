@@ -21,13 +21,15 @@ NDTFrame::NDTFrame(Vector3d trans,
     unsigned short width,
     unsigned short height,
     double cell_side,
-    bool calculate_cells_params
+    bool calculate_cells_params,
+    NDTPSOConfig config
 #if BUILD_OCCUPANCY_GRID
     ,
     double occupancy_grid_cell_size
 #endif
     )
     : s_trans(std::move(trans))
+    , s_config(std::move(config))
     , width(width)
     , height(height)
     , cell_side(cell_side)
@@ -177,7 +179,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data,
     // corresponding (theta)
     // according to the sensibility and the minimum angle
     for (unsigned int i = 0; i < n; ++i) {
-        if ((laser_data[i] < max_range) && (laser_data[i] > LASER_IGNORE_EPSILON)) {
+        if ((laser_data[i] < max_range) && (laser_data[i] > this->s_config.laserIgnoreEpsilon)) {
             theta = index_to_angle(i, angle_increment, min_angle);
 #if PREFER_FRONTAL_POINTS
             delta_theta += sinf(theta);
@@ -408,7 +410,7 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
 #ifdef OPENCV_FOUND
     if (save_image) {
         sprintf(output_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
-            filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
+            filename, NDT_WINDOW_SIZE, this->s_config.psoConfig.iterations, this->s_config.psoConfig.populationSize,
             this->width, this->height, this->cell_side, density);
 
         imwrite(output_filename, img);
