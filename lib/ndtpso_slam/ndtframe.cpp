@@ -269,7 +269,7 @@ int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
 Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
 {
     Vector3d deviation = Vector3d(.1, .1, 3.1415E-3); // Used to UNIFORMLY distribute the initial particles
-    return pso_optimization(std::move(initial_guess), this, new_frame, PSO_ITERATIONS, deviation);
+    return pso_optimization(std::move(initial_guess), this, new_frame, deviation);
 }
 
 void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, bool save_image, short density

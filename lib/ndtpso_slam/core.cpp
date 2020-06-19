@@ -52,21 +52,20 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
 }
 
 Vector3d pso_optimization(Vector3d initial_guess,
-    NDTFrame* const ref_frame,
-    NDTFrame* const new_frame,
-    unsigned int iters_num,
-    const Array3d& deviation)
+    NDTFrame* ref_frame,
+    NDTFrame* new_frame,
+    const Array3d& deviation,
+    const PSOConfig& pso_conf)
 {
-    double w = PSO_W, c1 = PSO_C1, c2 = PSO_C2, w_damping_coef = PSO_W_DUMPING_COEF;
-    Array3d zero_devi; /* TODO: why I used an array to store a 3D vector deviation?! */
-    zero_devi << 1E-4, 1E-4, 1E-5;
+    double w = pso_conf.coeff.w;
+    Array3d zero_devi = { 1E-4, 1E-4, 1E-5 }; /* TODO: why I used an array to store a 3D vector deviation?! */
 
     vector<Particle> particles;
 
     // Use the initial guess as an initial global best, using a zero deviation
     Particle global_best(initial_guess.array(), zero_devi, ref_frame, new_frame);
 
-    for (unsigned int i = 0; i < PSO_POPULATION_SIZE; ++i) {
+    for (unsigned int i = 0; i < pso_conf.populationSize; ++i) {
         particles.emplace_back(initial_guess.array(), deviation, ref_frame, new_frame);
 
         if (particles[i].cost < global_best.best_cost) {
@@ -81,15 +80,17 @@ Vector3d pso_optimization(Vector3d initial_guess,
     unsigned int iter_n = 0;
 #endif
 
-    for (unsigned int i = 0; i < iters_num; ++i) {
-        omp_set_num_threads(omp_get_max_threads());
+    for (unsigned int i = 0; i < pso_conf.iterations; ++i) {
+        int n_threads = omp_get_max_threads();
+        omp_set_num_threads(n_threads);
+
 #pragma omp parallel for schedule(auto)
-        for (unsigned int j = 0; j < PSO_POPULATION_SIZE; ++j) {
+        for (unsigned int j = 0; j < pso_conf.populationSize; ++j) {
             for (unsigned int k = 0; k < 3; ++k) {
                 Array2d random_coef = Array2d::Random().abs();
                 particles[j].velocity[k] = w * particles[j].velocity[k]
-                    + c1 * random_coef.x() * (particles[j].best_position[k] - particles[j].position[k])
-                    + c2 * random_coef.y() * (global_best.best_position[k] - particles[j].position[k]);
+                    + pso_conf.coeff.c1 * random_coef.x() * (particles[j].best_position[k] - particles[j].position[k])
+                    + pso_conf.coeff.c2 * random_coef.y() * (global_best.best_position[k] - particles[j].position[k]);
 
                 particles[j].position[k] = particles[j].position[k] + particles[j].velocity[k];
             }
@@ -110,7 +111,7 @@ Vector3d pso_optimization(Vector3d initial_guess,
             }
         }
 
-        w *= w_damping_coef;
+        w *= pso_conf.coeff.w_dumping;
     }
 
 #if defined(DEBUG) && DEBUG

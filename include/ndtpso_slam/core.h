@@ -9,7 +9,12 @@
 using std::vector;
 using namespace Eigen;
 
-Vector3d pso_optimization(Vector3d initial_guess, NDTFrame* ref_frame, NDTFrame* new_frame, unsigned int iters_num = 50, const Array3d& deviation = { 0, 0, 0 });
+Vector3d pso_optimization(Vector3d initial_guess,
+    NDTFrame* ref_frame,
+    NDTFrame* new_frame,
+    const Array3d& deviation = { 0, 0, 0 },
+    const PSOConfig& pso_conf = PSOConfig());
+
 Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* ref_frame, NDTFrame* new_frame, unsigned int iters_num = 50, const Array3d& deviation = { 0, 0, 0 });
 
 // Spatial mapping T between two robot coordinate frames

@@ -15,7 +15,7 @@ private:
     vector<Vector3d> s_poses, s_odoms;
     vector<double> s_timestamps;
     double s_x_min, s_x_max, s_y_min, s_y_max;
-    NdtPsoConfig s_config;
+    NDTPSOConfig s_config;
 
 #if BUILD_OCCUPANCY_GRID
     struct {
@@ -37,14 +37,21 @@ public:
     bool built;
     unsigned int numOfCells;
     double cell_side;
-    NDTFrame(Vector3d trans, unsigned short width = 20, unsigned short height = 20, double cell_side = 1.0, bool calculate_cells_params = true
+    NDTFrame(Vector3d trans,
+        unsigned short width = 20,
+        unsigned short height = 20,
+        double cell_side = 1.0,
+        bool calculate_cells_params = true
 #if BUILD_OCCUPANCY_GRID
         ,
         double occupancy_grid_cell_size = .0
 #endif
     );
     // void transform(Vector3d trans);
-    void loadLaser(const vector<float>& laser_data, const float& min_angle, const float& angle_increment, const float& max_range);
+    void loadLaser(const vector<float>& laser_data,
+        const float& min_angle,
+        const float& angle_increment,
+        const float& max_range);
     void update(Vector3d trans, NDTFrame* new_frame);
     void addPoint(Vector2d& point);
     inline void setTrans(Vector3d trans) { this->s_trans = std::move(trans); }
