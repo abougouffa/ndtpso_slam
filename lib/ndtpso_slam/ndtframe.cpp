@@ -1,10 +1,13 @@
 #include "ndtpso_slam/ndtframe.h"
 #include "ndtpso_slam/core.h"
 #include <cstdio>
+#include <utility>
+
+#ifdef OPENCV_FOUND
 #include <opencv/cv.hpp>
 #include <opencv/cvwimage.h>
 #include <opencv/ml.h>
-#include <utility>
+#endif
 
 #ifndef MIN
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
@@ -280,9 +283,6 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
 )
 {
     // Save the points, poses & odoms to an image, useful for debugging!
-    int size_x = this->width * density, // density in "pixel per meter"
-        size_y = this->height * density;
-
     FILE *hndl_poses = nullptr, *hndl_points = nullptr;
     char output_filename[250];
 
@@ -305,6 +305,10 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
         return;
     }
 
+#ifdef OPENCV_FOUND
+    int size_x = this->width * density, // density in "pixel per meter"
+        size_y = this->height * density;
+
     int counter = 0;
 
     cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
@@ -316,6 +320,7 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
         cv::line(img, cv::Point(i, 0), cv::Point(i, size_y), cv::Scalar(180, 180, 180));
         cv::line(img, cv::Point(0, i), cv::Point(size_x, i), cv::Scalar(180, 180, 180));
     }
+#endif
 
     // Draw and dump 2D points
     //for (unsigned int i = 0; i < this->numOfCells; ++i) {
@@ -323,11 +328,11 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
         for (auto& points : cell.points) {
             for (auto& point : points) {
                 // for (unsigned int j = 0; j < points.size(); ++j) {
+#ifdef OPENCV_FOUND
                 int x = (size_x / 2) + static_cast<int>(point.x() * density);
                 int y = (size_y / 2) - static_cast<int>(point.y() * density);
-
                 cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
-
+#endif
                 if (save_points) {
                     fprintf(hndl_points, "%.5f,%.5f\n", point.x(), point.y());
                     // }
@@ -338,6 +343,7 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
 
     // Draw and dump poses and odometries
     for (unsigned int i = 0; i < this->s_odoms.size(); ++i) {
+#ifdef OPENCV_FOUND
         auto x = (size_x / 2) + static_cast<int>(this->s_odoms[i].x() * density),
              y = (size_y / 2) - static_cast<int>(this->s_odoms[i].y() * density),
              dx = static_cast<int>(.5 * cos(-this->s_odoms[i].z()) * density),
@@ -361,7 +367,7 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
         cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
 
         counter = (counter + 1) % 5;
-
+#endif
         if (save_points) {
             fprintf(hndl_poses, "%.6f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
                 this->s_timestamps[i],
@@ -399,6 +405,7 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
         fclose(hndl_poses);
     }
 
+#ifdef OPENCV_FOUND
     if (save_image) {
         sprintf(output_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
             filename, NDT_WINDOW_SIZE, PSO_ITERATIONS, PSO_POPULATION_SIZE,
@@ -430,4 +437,5 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
 
         imwrite(output_filename, img_og);
     }
+#endif
 }
