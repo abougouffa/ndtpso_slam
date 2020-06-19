@@ -192,6 +192,7 @@ int main(int argc, char** argv)
     ROS_INFO("Config [PSO Number of Iterations: %d]", PSO_ITERATIONS);
     ROS_INFO("Config [PSO Population Size: %d]", PSO_POPULATION_SIZE);
     ROS_INFO("Config [NDT Cell Size: %.2fm]", param_cell_side);
+    ROS_INFO("Config [NDT Frame Size: %dx%dm]", param_frame_size, param_frame_size);
     ROS_INFO("Config [NDT Window Size: %d]", NDT_WINDOW_SIZE);
 #if BUILD_OCCUPANCY_GRID
     ROS_INFO("Config [Occupancy Grid Cell Size: %.2fm]", param_occupancy_grid_cell_side);
