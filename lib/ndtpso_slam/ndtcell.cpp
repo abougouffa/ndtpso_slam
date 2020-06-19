@@ -29,7 +29,7 @@ void NDTCell::addPoint(const Vector2d& point)
 
     this->s_current_count++;
     this->s_current_partial_sum += point;
-    this->points[this->s_current_window_id].push_back(point);
+    this->points[this->s_current_window_id].push_back(std::move(point));
     this->created = true;
     this->built = false;
 }
