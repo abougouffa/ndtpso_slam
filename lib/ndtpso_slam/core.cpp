@@ -13,7 +13,7 @@ struct Particle {
     Particle(const Array3d& mean,
         const Array3d& deviation,
         NDTFrame* const ref_frame,
-        NDTFrame* const new_frame)
+        const NDTFrame* const new_frame)
         : position(mean + (Array3d::Random() * deviation)) /* Randomly place the particles according to the mean and the deviation */
         , velocity(Vector3d(0., 0., 0.))
     {
@@ -25,7 +25,7 @@ struct Particle {
     }
 };
 
-double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const new_frame)
+double cost_function(Vector3d trans, NDTFrame* const ref_frame, const NDTFrame* const new_frame)
 {
     if (!ref_frame->built)
         ref_frame->build();
@@ -53,7 +53,7 @@ double cost_function(Vector3d trans, NDTFrame* const ref_frame, NDTFrame* const 
 
 Vector3d pso_optimization(Vector3d initial_guess,
     NDTFrame* ref_frame,
-    NDTFrame* new_frame,
+    const NDTFrame* const new_frame,
     const Array3d& deviation,
     const PSOConfig& pso_conf)
 {

@@ -164,7 +164,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data,
 
 #if USING_TRANS
     // Define a function 'f' to do transformation if needed
-    Vector2d (*trans_func)(Vector2d&, Vector3d&) = nullptr;
+    Vector2d (*trans_func)(const Vector2d&, const Vector3d&) = nullptr;
 
     if (!this->s_trans.isZero(1e-6))
         trans_func = &transform_point;
@@ -271,7 +271,7 @@ int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
     return -1;
 }
 
-Vector3d NDTFrame::align(Vector3d initial_guess, NDTFrame* const new_frame)
+Vector3d NDTFrame::align(Vector3d initial_guess, const NDTFrame* const new_frame)
 {
     Vector3d deviation = Vector3d(.1, .1, 3.1415E-3); // Used to UNIFORMLY distribute the initial particles
     return pso_optimization(std::move(initial_guess), this, new_frame, deviation);

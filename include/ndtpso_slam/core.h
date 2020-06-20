@@ -9,17 +9,23 @@
 using std::vector;
 using namespace Eigen;
 
-Vector3d pso_optimization(Vector3d initial_guess,
+Vector3d pso_optimization(
+    Vector3d initial_guess,
     NDTFrame* ref_frame,
-    NDTFrame* new_frame,
+    const NDTFrame* const new_frame,
     const Array3d& deviation = { 0, 0, 0 },
     const PSOConfig& pso_conf = PSOConfig());
 
-Vector3d glir_pso_optimization(Vector3d initial_guess, NDTFrame* ref_frame, NDTFrame* new_frame, unsigned int iters_num = 50, const Array3d& deviation = { 0, 0, 0 });
+Vector3d glir_pso_optimization(
+    Vector3d initial_guess,
+    NDTFrame* ref_frame,
+    NDTFrame* new_frame,
+    unsigned int iters_num = 50,
+    const Array3d& deviation = { 0, 0, 0 });
 
 // Spatial mapping T between two robot coordinate frames
 // given point (the old frame origin), and trans (x, y and theta), return the new frame origin
-inline Vector2d transform_point(Vector2d& point, Vector3d& trans)
+inline Vector2d transform_point(const Vector2d& point, const Vector3d& trans)
 {
     return { point.x() * cos(trans.z()) - point.y() * sin(trans.z()) + trans.x(),
         point.x() * sin(trans.z()) + point.y() * cos(trans.z()) + trans.y() };
@@ -42,6 +48,6 @@ inline Vector2d laser_to_point(float r, float theta)
     return { double(r) * cos(double(theta)), double(r) * sin(double(theta)) };
 }
 
-extern double cost_function(Vector3d trans, NDTFrame* ref_frame, NDTFrame* new_frame);
+double cost_function(Vector3d trans, NDTFrame* const ref_frame, const NDTFrame* const new_frame);
 
 #endif // NDTPSO_BASE_H

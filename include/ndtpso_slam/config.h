@@ -27,6 +27,7 @@
 struct PSOConfig {
     unsigned int iterations{ PSO_ITERATIONS };
     unsigned int populationSize{ PSO_POPULATION_SIZE };
+    int num_threads{ -1 };
     struct {
         double w{ PSO_W };
         double c1{ PSO_C1 };

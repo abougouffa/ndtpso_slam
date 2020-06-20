@@ -64,7 +64,7 @@ public:
 #endif
     void build();
     int getCellIndex(Vector2d point, int grid_width, double cell_side);
-    Vector3d align(Vector3d initial_guess, NDTFrame* new_frame);
+    Vector3d align(Vector3d initial_guess, const NDTFrame* const new_frame);
     void dumpMap(const char* filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50
 #if BUILD_OCCUPANCY_GRID
         ,
