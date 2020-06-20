@@ -80,8 +80,10 @@ Vector3d pso_optimization(Vector3d initial_guess,
     unsigned int iter_n = 0;
 #endif
 
+    int n_threads = omp_get_max_threads();
+    n_threads = (pso_conf.num_threads > 0) && (pso_conf.num_threads < n_threads) ? pso_conf.num_threads : n_threads;
+
     for (unsigned int i = 0; i < pso_conf.iterations; ++i) {
-        int n_threads = omp_get_max_threads();
         omp_set_num_threads(n_threads);
 
 #pragma omp parallel for schedule(auto)
