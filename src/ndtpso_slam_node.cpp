@@ -44,9 +44,13 @@ static std::chrono::time_point<std::chrono::high_resolution_clock> start_time, l
 
 static int param_frame_size;
 static double param_cell_side;
-static bool first_iter;
-static int number_of_iters = 0;
-static Vector3d global_trans, previous_pose, trans_estimate, initial_pose;
+
+static bool first_iteration{ true };
+static unsigned int number_of_iters{ 0 };
+static Vector3d global_trans{ Vector3d::Zero() },
+    previous_pose{ Vector3d::Zero() },
+    trans_estimate{ Vector3d::Zero() },
+    initial_pose{ Vector3d::Zero() };
 
 static NDTFrame* current_frame;
 static NDTFrame* ref_frame;
@@ -80,8 +84,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
                       odom->pose.pose.orientation.w))
         .getRPY(_, _, odom_orientation);
 
-    if (first_iter) {
-        first_iter = false;
+    if (first_iteration) {
         current_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
         previous_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
         start_time = std::chrono::high_resolution_clock::now();
@@ -132,17 +135,18 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     ++number_of_iters;
     std::chrono::duration<double> current_rate = last_call_time - start_time;
 
-    ROS_INFO("Average publish rate: %.2fHz, matching rate: %.2fHz", 1.0 / (current_rate.count() / number_of_iters), 1. / elapsed.count());
+    if (!first_iteration) {
+        ROS_INFO("Average publish rate: %.2fHz, matching rate: %.2fHz",
+            1.0 / (current_rate.count() / number_of_iters),
+            1. / elapsed.count());
+    }
+
+    first_iteration = false;
     matcher_mutex.unlock();
 }
 
 int main(int argc, char** argv)
 {
-    first_iter = true;
-    global_trans = Vector3d::Zero();
-    previous_pose = Vector3d::Zero();
-    trans_estimate = Vector3d::Zero();
-
     ros::init(argc, argv, "ndtpso_slam");
     ros::NodeHandle nh("~");
 
@@ -287,9 +291,9 @@ int main(int argc, char** argv)
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
     // param_scan_topic = param_scan_topic.replace("/", "-");
 #if SAVE_MAP_DATA_TO_FILE
-    global_map->dumpMap(filename, true, true, true, 200, false);
+    global_map->dumpMap(filename, true, true, true, 100, false);
 #endif
     cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
     sprintf(filename, "%s-%d-ref-frame", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
-    ref_frame->dumpMap(filename, true, true, true, 200, true);
+    ref_frame->dumpMap(filename, true, true, true, 100, true);
 }
