@@ -1,7 +1,7 @@
 NDTPSO-SLAM
 ===========
 
-NDTPSO-SLAM is a ROS package which provides an implementation of the scan matching algorithm proposed in [ref](#),
+NDTPSO-SLAM is a ROS package which provides an inhanced implementation of the scan matching algorithm proposed in [1]
 It uses NDT (Normal distribution transform) to modelize the environnement and PSO (Particle swarm
 optimisation) to perform the scan matching and solve the pose problem.
 
@@ -14,3 +14,5 @@ library.
 ### Maintainer:
 Abdelhak BOUGOUFFA, Paris-Saclay University, SATIE Laboratory <[abdelhak.bougouffa[at]universite-paris-saclay.fr](mailto:abdelhak.bougouffa@universite-paris-saclay.fr)>
 
+
+[1]: Sara BOURAINE, Abdelhak BOUGOUFFA and Ouahiba AZOUAOUI, NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization, ICARCV 2020.
