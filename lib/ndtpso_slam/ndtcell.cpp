@@ -37,15 +37,8 @@ void NDTCell::addPoint(const Vector2d& point)
 bool NDTCell::build()
 {
     // Managing the circular buffer "the window" in a constant time
-    this->s_global_sum = this->s_global_sum // The global sum
-        + this->s_current_partial_sum // plus the currnet partial sum
-        - this->s_partial_sums[this->s_current_window_id]; // Minus the partial sum of the item we will replace with the current partial sum
-    this->s_partial_sums[this->s_current_window_id] = this->s_current_partial_sum; // We replace the item
-
-    this->s_global_count = this->s_global_count
-        + this->s_current_count
-        - this->s_partial_counts[this->s_current_window_id];
-    this->s_partial_counts[this->s_current_window_id] = this->s_current_count;
+    WINDOW_ADD(this->s_global_sum, this->s_current_partial_sum, this->s_partial_sums, this->s_current_window_id);
+    WINDOW_ADD(this->s_global_count, this->s_current_count, this->s_partial_counts, this->s_current_window_id);
 
     if (this->s_global_count > 2) {
         this->mean = this->s_global_sum / this->s_global_count;
@@ -58,15 +51,14 @@ bool NDTCell::build()
             cov += (distance_from_mean * distance_from_mean.transpose());
         }
 
-        this->s_global_covar_sum = (this->s_global_covar_sum + cov) - this->s_partial_covars[this->s_current_window_id];
-        this->s_partial_covars[this->s_current_window_id] = cov;
+        WINDOW_ADD(this->s_global_covar_sum, cov, this->s_partial_covars, this->s_current_window_id);
 
         this->s_calc_covar_inverse();
         this->built = true;
     }
 
     if (this->s_current_count > NDT_MAX_POINTS_PER_CELL) {
-        this->s_current_window_id = (this->s_current_window_id + 1) % NDT_WINDOW_SIZE;
+        WINDOW_INC_ID(this->s_current_window_id);
         this->s_current_count = 0;
         this->s_current_partial_sum = Vector2d::Zero();
     }

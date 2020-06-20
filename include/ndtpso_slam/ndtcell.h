@@ -5,6 +5,16 @@
 #include <eigen3/Eigen/Core>
 #include <vector>
 
+// 1. The global sum
+//        (plus) the currnet partial sum
+//        (minus) the partial sum of the item we will replace with the current partial sum
+// 2. We replace the item
+#define WINDOW_ADD(global, partial, partials, idx) \
+    (global = (global + partial - partials[idx])); \
+    (partials[idx] = partial)
+
+#define WINDOW_INC_ID(idx) (idx = ((idx + 1) % NDT_WINDOW_SIZE))
+
 using namespace Eigen;
 using std::vector;
 
