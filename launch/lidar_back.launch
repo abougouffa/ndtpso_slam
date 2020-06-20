@@ -1,8 +1,13 @@
 <launch>
-    <node name="ndtpso_slam_node" pkg="ndtpso_slam" type="ndtpso_slam_node"
-        output="screen">
+    <node name="ndtpso_slam_node" pkg="ndtpso_slam" type="ndtpso_slam_node" output="screen">
+        <!-- <rosparam param="og_cell_side">0.01</rosparam>   -->
+        <!-- <rosparam param="odom_topic">"odom"</rosparam>   -->
+        <!-- <rosparam param="map_size">25</rosparam>         -->
+        <!-- <rosparam param="rate">10</rosparam>             -->
+        <!-- <rosparam param="cell_side">0.5</rosparam>       -->
+        <rosparam param="frame_size">50</rosparam>
         <rosparam param="scan_topic">"/scan_back"</rosparam>
         <rosparam param="scan_frame">"lidar_back"</rosparam>
-<!--        <remap from="~odom" to="/odom"/> -->
+        <!-- <remap from="~odom" to="/odom"/>                 -->
     </node>
 </launch>
