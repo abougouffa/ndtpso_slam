@@ -6,8 +6,12 @@
 #include <eigen3/Eigen/Core>
 #include <vector>
 
+using Eigen::Array2d;
+using Eigen::Array3d;
+using Eigen::Matrix2d;
+using Eigen::Vector2d;
+using Eigen::Vector3d;
 using std::vector;
-using namespace Eigen;
 
 Vector3d pso_optimization(
     Vector3d initial_guess,
