@@ -138,19 +138,22 @@ void NDTFrame::transform(Vector3d trans)
 
         this->cells = vector<NDTCell>(this->numOfCells);
 
-        for (unsigned int i = 0; i < this->numOfCells; ++i)
-            if ((*old_cells)[i].created)
-                for (unsigned int j = 0; j < this->cells[i].points->size(); ++j) {
-                    Vector2d new_point = transform_point(this->cells[i].points[j], trans);
-                    this->addPoint(new_point);
+        //for (unsigned int i = 0; i < this->numOfCells; ++i)
+        for (auto& old_cell : (*old_cells)) {
+            if (old_cell.created) {
+                for (auto& points : old_cell.points) {
+                    for (auto& point : points) {
+                        Vector2d new_point = transform_point(point, trans);
+                        this->addPoint(new_point);
+                    }
                 }
+            }
+        }
 
         delete old_cells;
-
         this->built = false;
     }
 }
-#endif
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
