@@ -78,7 +78,9 @@ NDTFrame::NDTFrame(Vector3d trans,
 
 void NDTFrame::build()
 {
+#if BUILD_OCCUPANCY_GRID
     auto og_cells_per_cell = static_cast<uint32_t>(floor(this->cell_side / this->s_occupancy_grid.cell_size));
+#endif
 
     for (unsigned int i = 0; i < this->numOfCells; ++i) {
         auto current_cell = &this->cells[i];
@@ -130,7 +132,6 @@ void NDTFrame::build()
     this->built = true;
 }
 
-#if false
 void NDTFrame::transform(Vector3d trans)
 {
     if (!trans.isZero(1e-6)) {
@@ -419,6 +420,7 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
         imwrite(output_filename, img);
     }
 
+#if BUILD_OCCUPANCY_GRID
     if (save_occupancy_grid) {
         uint32_t real_width = this->s_occupancy_grid.max_x_ind - this->s_occupancy_grid.min_x_ind,
                  real_heigth = this->s_occupancy_grid.max_y_ind - this->s_occupancy_grid.min_y_ind;
@@ -442,5 +444,6 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
 
         imwrite(output_filename, img_og);
     }
+#endif
 #endif
 }

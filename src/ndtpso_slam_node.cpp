@@ -169,7 +169,6 @@ int main(int argc, char** argv)
     // Read parameters
     std::string param_scan_topic, param_odom_topic, param_lidar_frame;
     int param_map_size, param_rate;
-    double param_occupancy_grid_cell_side;
 
     nh.param<std::string>("scan_topic", param_scan_topic, DEFAULT_SCAN_TOPIC);
     nh.param<std::string>("odom_topic", param_odom_topic, DEFAULT_ODOM_TOPIC);
@@ -179,6 +178,7 @@ int main(int argc, char** argv)
     nh.param("cell_side", param_cell_side, DEFAULT_CELL_SIZE_M);
     nh.param<int>("frame_size", param_frame_size, DEFAULT_FRAME_SIZE_M);
 #if BUILD_OCCUPANCY_GRID
+    double param_occupancy_grid_cell_side;
     nh.param("og_cell_side", param_occupancy_grid_cell_side, DEFAULT_OCCUPANCY_GRID_CELL_SIZE_M);
 #endif
 #if SYNC_WITH_LASER_TOPIC
@@ -291,9 +291,19 @@ int main(int argc, char** argv)
     sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
     // param_scan_topic = param_scan_topic.replace("/", "-");
 #if SAVE_MAP_DATA_TO_FILE
-    global_map->dumpMap(filename, true, true, true, 100, false);
+    global_map->dumpMap(filename, true, true, true, 100
+#if BUILD_OCCUPANCY_GRID
+        ,
+        false
+#endif
+    );
 #endif
     cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
     sprintf(filename, "%s-%d-ref-frame", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
-    ref_frame->dumpMap(filename, true, true, true, 100, true);
+    ref_frame->dumpMap(filename, true, true, true, 100
+#if BUILD_OCCUPANCY_GRID
+        ,
+        true
+#endif
+    );
 }
