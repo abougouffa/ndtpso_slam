@@ -277,8 +277,16 @@ int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
 
 Vector3d NDTFrame::align(Vector3d initial_guess, const NDTFrame* const new_frame)
 {
-    Vector3d deviation = Vector3d(.1, .1, 3.1415E-3); // Used to UNIFORMLY distribute the initial particles
-    return pso_optimization(std::move(initial_guess), this, new_frame, deviation);
+    // Used to UNIFORMLY distribute the initial particles
+    Vector3d deviation = this->s_iter < 2 ? Vector3d(.1, .1, 3.1415E-3) : (this->s_pose_diff * 2.).array().abs();
+
+    ++this->s_iter;
+
+    auto pose = pso_optimization(std::move(initial_guess), this, new_frame, std::move(deviation));
+    this->s_pose_diff = pose - this->s_prev_pose;
+    this->s_prev_pose = pose;
+
+    return pose;
 }
 
 void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, bool save_image, short density
@@ -413,8 +421,8 @@ void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, 
 
 #ifdef OPENCV_FOUND
     if (save_image) {
-        sprintf(output_filename, "%s-w%d-PSOitr%d-PSOpop%d-%dx%d-c%.2f-%dppm.png",
-            filename, NDT_WINDOW_SIZE, this->s_config.psoConfig.iterations, this->s_config.psoConfig.populationSize,
+        sprintf(output_filename, "%s-w%d-%dp%di-%dx%d-c%.2f-%dppm.png",
+            filename, NDT_WINDOW_SIZE, this->s_config.psoConfig.populationSize, this->s_config.psoConfig.iterations,
             this->width, this->height, this->cell_side, density);
 
         imwrite(output_filename, img);

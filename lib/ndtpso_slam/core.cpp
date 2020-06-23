@@ -65,7 +65,7 @@ Vector3d pso_optimization(Vector3d initial_guess,
     // Use the initial guess as an initial global best, using a zero deviation
     Particle global_best(initial_guess.array(), zero_devi, ref_frame, new_frame);
 
-    for (unsigned int i = 0; i < pso_conf.populationSize; ++i) {
+    for (unsigned i = 0; i < static_cast<unsigned>(pso_conf.populationSize); ++i) {
         particles.emplace_back(initial_guess.array(), deviation, ref_frame, new_frame);
 
         if (particles[i].cost < global_best.best_cost) {
@@ -83,11 +83,11 @@ Vector3d pso_optimization(Vector3d initial_guess,
     int n_threads = omp_get_max_threads();
     n_threads = (pso_conf.num_threads > 0) && (pso_conf.num_threads < n_threads) ? pso_conf.num_threads : n_threads;
 
-    for (unsigned int i = 0; i < pso_conf.iterations; ++i) {
+    for (unsigned i = 0; i < static_cast<unsigned>(pso_conf.iterations); ++i) {
         omp_set_num_threads(n_threads);
 
 #pragma omp parallel for schedule(auto)
-        for (unsigned int j = 0; j < pso_conf.populationSize; ++j) {
+        for (unsigned int j = 0; j < static_cast<unsigned>(pso_conf.populationSize); ++j) {
             for (unsigned int k = 0; k < 3; ++k) {
                 Array2d random_coef = Array2d::Random().abs();
                 particles[j].velocity[k] = w * particles[j].velocity[k]

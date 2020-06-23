@@ -5,6 +5,7 @@
 #include "ros/ros.h"
 #include <chrono>
 #include <cstdio>
+#include <ctime>
 #include <eigen3/Eigen/Core>
 #include <iostream>
 #include <laser_geometry/laser_geometry.h>
@@ -18,7 +19,8 @@
 
 #define SAVE_MAP_DATA_TO_FILE true
 #define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 10
-#define SYNC_WITH_LASER_TOPIC false
+#define SYNC_WITH_LASER_TOPIC true
+#define SYNC_WITH_ODOM true
 #define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 100
 #define DEFAULT_SCAN_TOPIC "/scan_front"
@@ -47,10 +49,10 @@ static double param_cell_side;
 
 static bool first_iteration{ true };
 static unsigned int number_of_iters{ 0 };
-static Vector3d global_trans{ Vector3d::Zero() },
-    previous_pose{ Vector3d::Zero() },
+static Vector3d previous_pose{ Vector3d::Zero() },
     trans_estimate{ Vector3d::Zero() },
-    initial_pose{ Vector3d::Zero() };
+    initial_pose{ Vector3d::Zero() },
+    current_pose{ Vector3d::Zero() };
 
 static NDTFrame* current_frame;
 static NDTFrame* ref_frame;
@@ -63,8 +65,19 @@ static ros::Publisher pose_pub;
 static geometry_msgs::PoseStamped current_pub_pose;
 
 // The odometry is used just for the initial pose to be easily compared with our calculated pose
-void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::OdometryConstPtr& odom)
+void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan
+#if SYNC_WITH_LASER_TOPIC
+    ,
+    const sensor_msgs::LaserScanConstPtr& scan2 __attribute__((unused)) // Unused, just for synchronization
+#endif
+
+#if SYNC_WITH_ODOM
+    ,
+    const nav_msgs::OdometryConstPtr& odom
+#endif
+)
 {
+
 #if SAVE_MAP_DATA_TO_FILE
     static unsigned int iter_num = 0;
 #endif
@@ -72,10 +85,9 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
     auto start = std::chrono::high_resolution_clock::now();
     last_call_time = start;
 
-    Vector3d current_pose;
-
     current_frame->loadLaser(scan->ranges, scan->angle_min, scan->angle_increment, scan->range_max);
 
+#if SYNC_WITH_ODOM
     double _, odom_orientation;
     tf::Matrix3x3(tf::Quaternion(
                       odom->pose.pose.orientation.x,
@@ -83,10 +95,14 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
                       odom->pose.pose.orientation.z,
                       odom->pose.pose.orientation.w))
         .getRPY(_, _, odom_orientation);
+#endif
 
     if (first_iteration) {
+#if SYNC_WITH_ODOM
         current_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
         previous_pose << odom->pose.pose.position.x, odom->pose.pose.position.y, odom_orientation;
+#endif
+        current_pose = previous_pose;
         start_time = std::chrono::high_resolution_clock::now();
         ROS_INFO("Min/Max ranges: %.2f/%.2f", static_cast<double>(scan->range_min), static_cast<double>(scan->range_max));
         ROS_INFO("Min/Max angles: %.2f/%.2f", static_cast<double>(scan->angle_min), static_cast<double>(scan->angle_max));
@@ -102,10 +118,14 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
         global_map->update(current_pose, current_frame);
     iter_num = (iter_num + 1) % SAVE_DATA_TO_FILE_EACH_NUM_ITERS;
     global_map->addPose(scan->header.stamp.toSec(),
-        current_pose,
+        current_pose
+#if SYNC_WITH_ODOM
+        ,
         Vector3d(odom->pose.pose.position.x,
             odom->pose.pose.position.y,
-            odom_orientation));
+            odom_orientation)
+#endif
+    );
 #endif
 
     // Publish 'pose', using the same timestamp of the laserscan (or use ros::Time::now() !!)
@@ -146,6 +166,7 @@ void scan_mathcher(const sensor_msgs::LaserScanConstPtr& scan, const nav_msgs::O
 }
 
 int main(int argc, char** argv)
+
 {
     ros::init(argc, argv, "ndtpso_slam");
     ros::NodeHandle nh("~");
@@ -166,6 +187,8 @@ int main(int argc, char** argv)
     ROS_INFO("Compiled with Clang %s", __clang_version__);
 #endif
 
+    NDTPSOConfig ndtpso_conf; // Initally, the object helds the default values
+
     // Read parameters
     std::string param_scan_topic, param_odom_topic, param_lidar_frame;
     int param_map_size, param_rate;
@@ -174,6 +197,9 @@ int main(int argc, char** argv)
     nh.param<std::string>("odom_topic", param_odom_topic, DEFAULT_ODOM_TOPIC);
     nh.param<std::string>("scan_frame", param_lidar_frame, DEFAULT_LIDAR_FRAME);
     nh.param("map_size", param_map_size, DEFAULT_OUTPUT_MAP_SIZE_M);
+    nh.param("num_threads", ndtpso_conf.psoConfig.num_threads, -1);
+    nh.param("iterations", ndtpso_conf.psoConfig.iterations, PSO_ITERATIONS);
+    nh.param("population", ndtpso_conf.psoConfig.populationSize, PSO_POPULATION_SIZE);
     nh.param("rate", param_rate, DEFAULT_RATE_HZ);
     nh.param("cell_side", param_cell_side, DEFAULT_CELL_SIZE_M);
     nh.param<int>("frame_size", param_frame_size, DEFAULT_FRAME_SIZE_M);
@@ -193,8 +219,9 @@ int main(int argc, char** argv)
     ROS_INFO("scan_frame:= \"%s\"", param_lidar_frame.c_str());
     ROS_INFO("rate:= %dHz", param_rate);
 
-    ROS_INFO("Config [PSO Number of Iterations: %d]", PSO_ITERATIONS);
-    ROS_INFO("Config [PSO Population Size: %d]", PSO_POPULATION_SIZE);
+    ROS_INFO("Config [PSO Number of Iterations: %d]", ndtpso_conf.psoConfig.iterations);
+    ROS_INFO("Config [PSO Population Size: %d]", ndtpso_conf.psoConfig.populationSize);
+    ROS_INFO("Config [PSO Threads: %d]", ndtpso_conf.psoConfig.num_threads);
     ROS_INFO("Config [NDT Cell Size: %.2fm]", param_cell_side);
     ROS_INFO("Config [NDT Frame Size: %dx%dm]", param_frame_size, param_frame_size);
     ROS_INFO("Config [NDT Window Size: %d]", NDT_WINDOW_SIZE);
@@ -209,9 +236,9 @@ int main(int argc, char** argv)
         static_cast<unsigned short>(param_frame_size),
         param_cell_side,
         true,
-        NDTPSOConfig()
+        ndtpso_conf
 #if BUILD_OCCUPANCY_GRID
-            ,
+        ,
         param_occupancy_grid_cell_side
 #endif
     );
@@ -243,35 +270,54 @@ int main(int argc, char** argv)
     auto init_trans = transform.getOrigin();
     initial_pose = Vector3d(init_trans.getX(), init_trans.getY(), tf::getYaw(transform.getRotation()));
     current_frame->setTrans(initial_pose);
+    previous_pose = current_pose = initial_pose;
 
     ROS_INFO("Starting from initial pose (%.5f, %.5f, %.5f)", initial_pose.x(), initial_pose.y(), initial_pose.z());
 
+#if SYNC_WITH_ODOM || SYNC_WITH_LASER_TOPIC
     typedef message_filters::sync_policies::ApproximateTime<
-        sensor_msgs::LaserScan, nav_msgs::Odometry
+        sensor_msgs::LaserScan
 #if SYNC_WITH_LASER_TOPIC
         ,
         sensor_msgs::LaserScan
+#endif
+#if SYNC_WITH_ODOM
+        ,
+        nav_msgs::Odometry
 #endif
         >
         ApproxSyncPolicy;
 
     message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub(nh, param_scan_topic, 10);
-    message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, param_odom_topic, 10);
-
 #if SYNC_WITH_LASER_TOPIC
     message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub_sync(nh, param_sync_topic, 10);
+#endif
+#if SYNC_WITH_ODOM
+    message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, param_odom_topic, 10);
 #endif
 
     message_filters::Synchronizer<ApproxSyncPolicy>
         sync(ApproxSyncPolicy(10),
-            laser_sub, odom_sub
+            laser_sub
 #if SYNC_WITH_LASER_TOPIC
             ,
             laser_sub_sync
 #endif
+#if SYNC_WITH_ODOM
+            ,
+            odom_sub
+#endif
         );
 
-    sync.registerCallback(boost::bind(&scan_mathcher, _1, _2));
+    sync.registerCallback(boost::bind(&scan_mathcher, _1, _2
+#if SYNC_WITH_ODOM && SYNC_WITH_LASER_TOPIC
+        ,
+        _3
+#endif
+        ));
+#else
+    ros::Subscriber laser_sub = nh.subscribe<sensor_msgs::LaserScan>(param_scan_topic, 1, &scan_mathcher);
+#endif
 
     ROS_INFO("NDTPSO node started successfuly");
 
@@ -284,11 +330,21 @@ int main(int argc, char** argv)
         loop_rate.sleep();
     }
 
+    char time_formated[80];
+    time_t rawtime;
+    time(&rawtime);
+
+    tm* timeinfo = localtime(&rawtime);
+
+    strftime(time_formated, sizeof(time_formated), "%Y%m%d-%H%M%S", timeinfo);
+
     cout << endl
          << "Exporting results "
-         << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
+         << "[.pose.csv, .map.csv, .png, .gnuplot]"
+         << endl;
+
     char filename[256];
-    sprintf(filename, "%s-%d", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
+    sprintf(filename, "%s-%s", param_scan_topic.substr(1).c_str(), time_formated);
     // param_scan_topic = param_scan_topic.replace("/", "-");
 #if SAVE_MAP_DATA_TO_FILE
     global_map->dumpMap(filename, true, true, true, 100
@@ -297,13 +353,14 @@ int main(int argc, char** argv)
         false
 #endif
     );
-#endif
     cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
-    sprintf(filename, "%s-%d-ref-frame", param_scan_topic.substr(1).c_str(), ros::Time::now().sec);
+#endif
+    sprintf(filename, "%s-%s-ref-frame", param_scan_topic.substr(1).c_str(), time_formated);
     ref_frame->dumpMap(filename, true, true, true, 100
 #if BUILD_OCCUPANCY_GRID
         ,
         true
 #endif
     );
+    cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
 }

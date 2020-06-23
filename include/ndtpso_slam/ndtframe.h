@@ -11,11 +11,18 @@ using std::vector;
 
 class NDTFrame {
 private:
-    Vector3d s_trans;
-    vector<Vector3d> s_poses, s_odoms;
+    Vector3d s_trans{ Vector3d::Zero() },
+        s_prev_pose{ Vector3d::Zero() },
+        s_pose_diff{ Vector3d::Zero() };
+    vector<Vector3d> s_poses,
+        s_odoms;
     vector<double> s_timestamps;
-    double s_x_min, s_x_max, s_y_min, s_y_max;
+    double s_x_min,
+        s_x_max,
+        s_y_min,
+        s_y_max;
     NDTPSOConfig s_config;
+    int s_iter{ 0 };
 
 #if BUILD_OCCUPANCY_GRID
     struct {
@@ -65,7 +72,11 @@ public:
     void build();
     int getCellIndex(Vector2d point, int grid_width, double cell_side);
     Vector3d align(Vector3d initial_guess, const NDTFrame* const new_frame);
-    void dumpMap(const char* filename, bool save_poses = true, bool save_points = true, bool save_image = true, short density = 50
+    void dumpMap(const char* filename,
+        bool save_poses = true,
+        bool save_points = true,
+        bool save_image = true,
+        short density = 50
 #if BUILD_OCCUPANCY_GRID
         ,
         bool save_occupancy_grid = true

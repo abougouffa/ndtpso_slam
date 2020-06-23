@@ -8,7 +8,7 @@
 #define NDT_WINDOW_SIZE 100
 #define USING_TRANS true
 #define PREFER_FRONTAL_POINTS false // Disabled
-#define BUILD_OCCUPANCY_GRID true
+#define BUILD_OCCUPANCY_GRID false
 
 #define USE_LOGGER false
 
@@ -17,16 +17,16 @@
 #endif
 
 // PSO parameters
-#define PSO_ITERATIONS 60
-#define PSO_POPULATION_SIZE 35
+#define PSO_ITERATIONS 50
+#define PSO_POPULATION_SIZE 30
 #define PSO_W_DUMPING_COEF 1.
 #define PSO_W .8
 #define PSO_C1 2.
 #define PSO_C2 2.
 
 struct PSOConfig {
-    unsigned int iterations{ PSO_ITERATIONS };
-    unsigned int populationSize{ PSO_POPULATION_SIZE };
+    int iterations{ PSO_ITERATIONS };
+    int populationSize{ PSO_POPULATION_SIZE };
     int num_threads{ -1 };
     struct {
         double w{ PSO_W };
