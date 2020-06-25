@@ -10,8 +10,8 @@ This project is devided to two parts, the `libndtpso_slam` which is a C++ librar
 
 ### Maintainer:
 Abdelhak BOUGOUFFA, Paris-Saclay University, SATIE Laboratory
-
 <`abdelhak [dot] bougouffa [at] universite-paris-saclay.fr`>
 
 ### To cite this work:
 - [1]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, 16th International Conference on Control, Automation, Robotics and Vision (ICARCV), 2020 (Submitted).
+- [2]: **Abdelhak BOUGOUFFA**, **Emmanuel SEIGNEZ**, **Samir BOUAZIZ** and **Florian GARDES**, _SmartTrolley: An Experimental Mobile Platform for Indoor Localization in Warehouses_, 16th International Conference on Control, Automation, Robotics and Vision (ICARCV), 2020 (Submitted).
