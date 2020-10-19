@@ -14,7 +14,7 @@ struct Particle {
         const Array3d& deviation,
         NDTFrame* const ref_frame,
         const NDTFrame* const new_frame)
-        : position(mean + (Array3d::Random() * deviation)) /* Randomly place the particles according to the mean and the deviation */
+        : position(mean + (Array3d::Random() * deviation)) /* Uniformly-randomized initialization for particles according to the mean and the deviation */
         , velocity(Vector3d(0., 0., 0.))
     {
         cost = cost_function(position, ref_frame, new_frame);
