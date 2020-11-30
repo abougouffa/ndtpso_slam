@@ -5,6 +5,8 @@
         <!-- <rosparam param="map_size">25</rosparam>         -->
         <!-- <rosparam param="rate">10</rosparam>             -->
         <!-- <rosparam param="cell_side">0.5</rosparam>       -->
+        <rosparam param="num_threads">4</rosparam>
+        <rosparam param="iterations">30</rosparam>
         <rosparam param="frame_size">50</rosparam>
         <rosparam param="scan_topic">"/scan_front"</rosparam>
         <rosparam param="sync_topic">"/scan_back"</rosparam>

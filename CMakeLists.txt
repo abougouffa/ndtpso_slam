@@ -27,6 +27,10 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+find_package(Eigen3 REQUIRED)
+
+add_definitions(${Eigen3_DEFINITIONS})
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -144,7 +148,7 @@ include_directories(
   lib/
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-# ${Eigen3_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
