@@ -5,6 +5,7 @@
 #include "ros/ros.h"
 #include <chrono>
 #include <cstdio>
+#include <string>
 #include <ctime>
 #include <eigen3/Eigen/Core>
 #include <iostream>
@@ -19,8 +20,9 @@
 
 #define SAVE_MAP_DATA_TO_FILE true
 #define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 10
-#define SYNC_WITH_LASER_TOPIC true
-#define SYNC_WITH_ODOM true
+#define SYNC_WITH_LASER_TOPIC false
+#define SYNC_WITH_ODOM false
+#define WAIT_FOR_TF false
 #define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 100
 #define DEFAULT_SCAN_TOPIC "/scan_front"
@@ -190,11 +192,15 @@ int main(int argc, char** argv)
     NDTPSOConfig ndtpso_conf; // Initally, the object helds the default values
 
     // Read parameters
-    std::string param_scan_topic, param_odom_topic, param_lidar_frame;
+    std::string param_scan_topic, param_lidar_frame;
+
     int param_map_size, param_rate;
 
     nh.param<std::string>("scan_topic", param_scan_topic, DEFAULT_SCAN_TOPIC);
+#if SYNC_WITH_ODOM
+    std::string param_odom_topic;
     nh.param<std::string>("odom_topic", param_odom_topic, DEFAULT_ODOM_TOPIC);
+#endif
     nh.param<std::string>("scan_frame", param_lidar_frame, DEFAULT_LIDAR_FRAME);
     nh.param("map_size", param_map_size, DEFAULT_OUTPUT_MAP_SIZE_M);
     nh.param("num_threads", ndtpso_conf.psoConfig.num_threads, -1);
@@ -215,8 +221,15 @@ int main(int argc, char** argv)
 
     // Print patameters
     ROS_INFO("scan_topic:= \"%s\"", param_scan_topic.c_str());
+
+#if SYNC_WITH_ODOM
     ROS_INFO("odom_topic:= \"%s\"", param_odom_topic.c_str());
+#endif
+
+#if WAIT_FOR_TF
     ROS_INFO("scan_frame:= \"%s\"", param_lidar_frame.c_str());
+#endif
+
     ROS_INFO("rate:= %dHz", param_rate);
 
     ROS_INFO("Config [PSO Number of Iterations: %d]", ndtpso_conf.psoConfig.iterations);
@@ -259,6 +272,7 @@ int main(int argc, char** argv)
 
     pose_pub = nh.advertise<geometry_msgs::PoseStamped>("pose", 1);
 
+#if WAIT_FOR_TF
     tf::TransformListener tf_listener(ros::Duration(1));
     tf::StampedTransform transform;
     ROS_INFO("Waiting for tf \"base_link\" -> \"%s\"", param_lidar_frame.c_str());
@@ -269,6 +283,10 @@ int main(int argc, char** argv)
 
     auto init_trans = transform.getOrigin();
     initial_pose = Vector3d(init_trans.getX(), init_trans.getY(), tf::getYaw(transform.getRotation()));
+#else
+    initial_pose = Vector3d::Zero();
+#endif
+
     current_frame->setTrans(initial_pose);
     previous_pose = current_pose = initial_pose;
 
@@ -343,9 +361,17 @@ int main(int argc, char** argv)
          << "[.pose.csv, .map.csv, .png, .gnuplot]"
          << endl;
 
-    char filename[256];
-    sprintf(filename, "%s-%s", param_scan_topic.substr(1).c_str(), time_formated);
-    // param_scan_topic = param_scan_topic.replace("/", "-");
+    size_t pos = 0;
+
+    do {
+        param_scan_topic.replace(pos, 1, "_");
+        pos = param_scan_topic.find("/", pos);
+    } while (pos != std::string::npos);
+
+    char filename[512];
+
+    sprintf(filename, "%s-%s", param_scan_topic.c_str(), time_formated);
+
 #if SAVE_MAP_DATA_TO_FILE
     global_map->dumpMap(filename, true, true, true, 100
 #if BUILD_OCCUPANCY_GRID
@@ -355,7 +381,8 @@ int main(int argc, char** argv)
     );
     cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
 #endif
-    sprintf(filename, "%s-%s-ref-frame", param_scan_topic.substr(1).c_str(), time_formated);
+    sprintf(filename, "%s-%s-ref-frame", param_scan_topic.c_str(), time_formated);
+        
     ref_frame->dumpMap(filename, true, true, true, 100
 #if BUILD_OCCUPANCY_GRID
         ,
