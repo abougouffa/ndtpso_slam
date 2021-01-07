@@ -16,7 +16,7 @@
 #include <string>
 #include <tf/transform_listener.h>
 
-#define NDTPSO_SLAM_VERSION "1.3.0"
+#define NDTPSO_SLAM_VERSION "1.4.0"
 
 #define SAVE_MAP_DATA_TO_FILE true
 #define SAVE_DATA_TO_FILE_EACH_NUM_ITERS 10
