@@ -6,7 +6,8 @@
 #define LASER_IGNORE_EPSILON 0.1f // Ignore points around the origin with 10cm
 
 #define NDT_WINDOW_SIZE 100
-#define USING_TRANS true
+#define TRANSFORM_POINTS_AT_LOAD false
+#define TRANSFORM_POSE_AFTER_ALIGN true
 #define PREFER_FRONTAL_POINTS false // Disabled
 #define BUILD_OCCUPANCY_GRID false
 

@@ -158,51 +158,50 @@ void NDTFrame::transform(Vector3d trans)
 
 // Initialize the cell from laser data according to the device sensibility and
 // the minimum angle
-void NDTFrame::loadLaser(vector<float> const& laser_data,
-    float const& min_angle,
-    float const& angle_increment,
-    float const& max_range)
-{
-    this->built = false;
-    auto n = static_cast<unsigned int>(laser_data.size());
+void NDTFrame::loadLaser(vector<float> const &laser_data,
+                         float const &min_angle, float const &angle_increment,
+                         float const &max_range) {
+  this->built = false;
+  auto n = static_cast<unsigned int>(laser_data.size());
 
-#if USING_TRANS
-    // Define a function 'f' to do transformation if needed
-    Vector2d (*trans_func)(const Vector2d&, const Vector3d&) = nullptr;
+#if TRANSFORM_POINTS_AT_LOAD
+  // Define a function 'f' to do transformation if needed
+  Vector2d (*trans_func)(const Vector2d &, const Vector3d &) = nullptr;
 
-    if (!this->s_trans.isZero(1e-6))
-        trans_func = &transform_point;
+  if (!this->s_trans.isZero(1e-6))
+    trans_func = &transform_point;
 #endif
 
-    float theta;
+  float theta;
 #if PREFER_FRONTAL_POINTS
-    float delta_theta = 0.f;
+  float delta_theta = 0.f;
 #endif
 
-    // For each element in the laser vector, get his index (i) and it's
-    // corresponding (theta)
-    // according to the sensibility and the minimum angle
-    for (unsigned int i = 0; i < n; ++i) {
-        if ((laser_data[i] < max_range) && (laser_data[i] > this->s_config.laserIgnoreEpsilon)) {
-            theta = index_to_angle(i, angle_increment, min_angle);
+  // For each element in the laser vector, get his index (i) and it's
+  // corresponding (theta)
+  // according to the sensibility and the minimum angle
+  for (unsigned int i = 0; i < n; ++i) {
+    if ((laser_data[i] < max_range) &&
+        (laser_data[i] > this->s_config.laserIgnoreEpsilon)) {
+      theta = index_to_angle(i, angle_increment, min_angle);
 #if PREFER_FRONTAL_POINTS
-            delta_theta += sinf(theta);
+      delta_theta += sinf(theta);
 
-            if (fabsf(delta_theta) > .5f) {
+      if (fabsf(delta_theta) > .5f) {
 #endif
-                Vector2d point = laser_to_point(laser_data[i], theta);
+        Vector2d point = laser_to_point(laser_data[i], theta);
 
-#if USING_TRANS
-                if (trans_func)
-                    point = trans_func(point, this->s_trans);
+#if TRANSFORM_POINTS_AT_LOAD
+        if (trans_func)
+          point = trans_func(point, this->s_trans);
 #endif
-                this->addPoint(point);
+        this->addPoint(point);
 #if PREFER_FRONTAL_POINTS
-                delta_theta = 0.f;
-            }
+        delta_theta = 0.f;
+      }
 #endif
-        }
     }
+  }
 }
 
 void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
@@ -275,18 +274,25 @@ int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
     return -1;
 }
 
-Vector3d NDTFrame::align(Vector3d initial_guess, const NDTFrame* const new_frame)
-{
-    // Used to UNIFORMLY distribute the initial particles
-    Vector3d deviation = this->s_iter < 2 ? Vector3d(.1, .1, 3.1415E-3) : (this->s_pose_diff * 2.).array().abs();
+Vector3d NDTFrame::align(Vector3d initial_guess,
+                         const NDTFrame *const new_frame) {
+  // Used to UNIFORMLY distribute the initial particles
+  Vector3d deviation = this->s_iter < 2
+                           ? Vector3d(.1, .1, 3.1415E-3)
+                           : (this->s_pose_diff * 2.).array().abs();
 
-    ++this->s_iter;
+  ++this->s_iter;
 
-    auto pose = pso_optimization(std::move(initial_guess), this, new_frame, std::move(deviation));
-    this->s_pose_diff = pose - this->s_prev_pose;
-    this->s_prev_pose = pose;
+  auto pose = pso_optimization(std::move(initial_guess), this, new_frame,
+                               std::move(deviation));
 
-    return pose;
+#if TRANSFORM_POSE_AFTER_ALIGN
+  pose -= this->s_trans;
+#endif
+
+  this->s_pose_diff = pose - this->s_prev_pose;
+  this->s_prev_pose = pose;
+  return pose;
 }
 
 void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, bool save_image, short density
