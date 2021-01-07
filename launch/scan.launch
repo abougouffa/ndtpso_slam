@@ -1,0 +1,15 @@
+<launch>
+    <node name="ndtpso_slam_front" pkg="ndtpso_slam" type="ndtpso_slam_node" output="screen">
+        <!-- <rosparam param="og_cell_side">0.01</rosparam>   -->
+        <!-- <rosparam param="odom_topic">"odom"</rosparam>   -->
+        <!-- <rosparam param="rate">10</rosparam>             -->
+        <!-- <rosparam param="cell_side">0.5</rosparam>       -->
+        <rosparam param="map_size">300</rosparam>
+        <rosparam param="num_threads">8</rosparam>
+        <rosparam param="iterations">30</rosparam>
+        <rosparam param="frame_size">300</rosparam>
+        <rosparam param="scan_topic">"/s300ttyS0/scan"</rosparam>
+        <remap from="/ndtpso_slam_node/pose" to="/ndtpso_slam_node/pose_front"/> 
+        <!-- <remap from="~odom" to="/odom"/>                 -->
+    </node>
+</launch>
