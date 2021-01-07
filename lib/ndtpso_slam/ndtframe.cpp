@@ -4,9 +4,7 @@
 #include <utility>
 
 #ifdef OPENCV_FOUND
-#include <opencv/cv.hpp>
-#include <opencv/cvwimage.h>
-#include <opencv/ml.h>
+#include <opencv4/opencv2/opencv.hpp>
 #endif
 
 #ifndef MIN
@@ -295,169 +293,203 @@ Vector3d NDTFrame::align(Vector3d initial_guess,
   return pose;
 }
 
-void NDTFrame::dumpMap(const char* filename, bool save_poses, bool save_points, bool save_image, short density
+void NDTFrame::dumpMap(const char *filename, bool save_poses, bool save_points,
+                       bool save_image, short density
 #if BUILD_OCCUPANCY_GRID
-    ,
-    bool save_occupancy_grid
+                       ,
+                       bool save_occupancy_grid
 #endif
-)
-{
-    // Save the points, poses & odoms to an image, useful for debugging!
-    FILE *hndl_poses = nullptr, *hndl_points = nullptr;
-    char output_filename[250];
+) {
+  // Save the points, poses & odoms to an image, useful for debugging!
+  FILE *hndl_poses = nullptr, *hndl_points = nullptr;
+  char output_filename[250];
 
-    if (save_poses) {
-        sprintf(output_filename, "%s.pose.csv", filename);
-        hndl_poses = fopen(output_filename, "w");
-        if (hndl_poses)
-            fprintf(hndl_poses, "timestamp,xP,yP,thP,xO,yO,thO\n");
-    }
+  if (save_poses) {
+    sprintf(output_filename, "%s.pose.csv", filename);
+    hndl_poses = fopen(output_filename, "w");
+    if (hndl_poses)
+      fprintf(hndl_poses, "timestamp,xP,yP,thP,xO,yO,thO\n");
+  }
 
-    if (save_points) {
-        sprintf(output_filename, "%s.map.csv", filename);
-        hndl_points = fopen(output_filename, "w");
-        if (hndl_points)
-            fprintf(hndl_points, "x,y\n");
-    }
+  if (save_points) {
+    sprintf(output_filename, "%s.map.csv", filename);
+    hndl_points = fopen(output_filename, "w");
+    if (hndl_points)
+      fprintf(hndl_points, "x,y\n");
+  }
 
-    if ((save_poses && !hndl_poses) || (save_points && !hndl_points)) {
-        printf("%s: Cannot open files, cannot save!\n ", __func__);
-        return;
-    }
+  if ((save_poses && !hndl_poses) || (save_points && !hndl_points)) {
+    printf("%s: Cannot open files, cannot save!\n ", __func__);
+    return;
+  }
 
 #ifdef OPENCV_FOUND
-    int size_x = this->width * density, // density in "pixel per meter"
-        size_y = this->height * density;
+  int size_x = this->width * density, // density in "pixel per meter"
+      size_y = this->height * density;
 
-    int counter = 0;
+  int counter = 0;
 
-    cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
+  cv::Mat img(size_x, size_y, CV_8UC3, cv::Scalar::all(255));
 
-    // cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot the normal distribution
+  // cv::Mat img_dist(size_x, size_y, CV_8UC3, cv::Scalar::all(0)); // To plot
+  // the normal distribution
 
-    // Draw a grid (using `density` as increment, we draw a line each 1 meter)
-    for (int i = 0; i < size_x; i += density) {
-        cv::line(img, cv::Point(i, 0), cv::Point(i, size_y), cv::Scalar(180, 180, 180));
-        cv::line(img, cv::Point(0, i), cv::Point(size_x, i), cv::Scalar(180, 180, 180));
-    }
+  // Draw a grid (using `density` as increment, we draw a line each 1 meter)
+  for (int i = 0; i < size_x; i += density) {
+    cv::line(img, cv::Point(i, 0), cv::Point(i, size_y),
+             cv::Scalar(180, 180, 180));
+    cv::line(img, cv::Point(0, i), cv::Point(size_x, i),
+             cv::Scalar(180, 180, 180));
+  }
 #endif
 
-    // Draw and dump 2D points
-    //for (unsigned int i = 0; i < this->numOfCells; ++i) {
-    for (auto& cell : this->cells) {
-        for (auto& points : cell.points) {
-            for (auto& point : points) {
-                // for (unsigned int j = 0; j < points.size(); ++j) {
+  // Draw and dump 2D points
+  // for (unsigned int i = 0; i < this->numOfCells; ++i) {
+  for (auto &cell : this->cells) {
+    for (auto &points : cell.points) {
+      for (auto &point : points) {
+        // for (unsigned int j = 0; j < points.size(); ++j) {
 #ifdef OPENCV_FOUND
-                int x = (size_x / 2) + static_cast<int>(point.x() * density);
-                int y = (size_y / 2) - static_cast<int>(point.y() * density);
-                cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
-#endif
-                if (save_points) {
-                    fprintf(hndl_points, "%.5f,%.5f\n", point.x(), point.y());
-                    // }
-                }
-            }
-        }
-    }
-
-    // Draw and dump poses and odometries
-    for (unsigned int i = 0; i < this->s_odoms.size(); ++i) {
-#ifdef OPENCV_FOUND
-        auto x = (size_x / 2) + static_cast<int>(this->s_odoms[i].x() * density),
-             y = (size_y / 2) - static_cast<int>(this->s_odoms[i].y() * density),
-             dx = static_cast<int>(.5 * cos(-this->s_odoms[i].z()) * density),
-             dy = static_cast<int>(.5 * sin(-this->s_odoms[i].z()) * density);
-
-        if (0 == counter) {
-            cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(100, 50, 0));
-        }
-
-        cv::circle(img, cv::Point(x, y), 2, cv::Scalar(255, 0, 0));
-
-        x = (size_x / 2) + static_cast<int>(this->s_poses[i].x() * density);
-        y = (size_y / 2) - static_cast<int>(this->s_poses[i].y() * density);
-        dx = static_cast<int>(.5 * cos(-this->s_poses[i].z()) * density);
-        dy = static_cast<int>(.5 * sin(-this->s_poses[i].z()) * density);
-
-        if (0 == counter) {
-            cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy), cv::Scalar(40, 40, 80));
-        }
-
-        cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
-
-        counter = (counter + 1) % 5;
+        int x = (size_x / 2) + static_cast<int>(point.x() * density);
+        int y = (size_y / 2) - static_cast<int>(point.y() * density);
+        cv::circle(img, cv::Point(x, y), 1, cv::Scalar(0));
 #endif
         if (save_points) {
-            fprintf(hndl_poses, "%.6f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                this->s_timestamps[i],
-                this->s_poses[i].x(), this->s_poses[i].y(), this->s_poses[i].z(),
-                this->s_odoms[i].x(), this->s_odoms[i].y(), this->s_odoms[i].z());
+          fprintf(hndl_points, "%.5f,%.5f\n", point.x(), point.y());
+          // }
         }
+      }
+    }
+  }
+
+  // Draw and dump poses and odometries
+  for (unsigned int i = 0; i < this->s_odoms.size(); ++i) {
+#ifdef OPENCV_FOUND
+    auto x = (size_x / 2) + static_cast<int>(this->s_odoms[i].x() * density),
+         y = (size_y / 2) - static_cast<int>(this->s_odoms[i].y() * density),
+         dx = static_cast<int>(.5 * cos(-this->s_odoms[i].z()) * density),
+         dy = static_cast<int>(.5 * sin(-this->s_odoms[i].z()) * density);
+
+    if (0 == counter) {
+      cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy),
+               cv::Scalar(100, 50, 0));
     }
 
-    if (save_poses)
-        fclose(hndl_poses);
+    cv::circle(img, cv::Point(x, y), 2, cv::Scalar(255, 0, 0));
 
-    if (save_points)
-        fclose(hndl_points);
+    x = (size_x / 2) + static_cast<int>(this->s_poses[i].x() * density);
+    y = (size_y / 2) - static_cast<int>(this->s_poses[i].y() * density);
+    dx = static_cast<int>(.5 * cos(-this->s_poses[i].z()) * density);
+    dy = static_cast<int>(.5 * sin(-this->s_poses[i].z()) * density);
 
-    if (save_poses || save_points) {
-        // Save the .gnuplot file to plot the outputs
-        sprintf(output_filename, "%s.gnuplot", filename);
-        hndl_poses = fopen(output_filename, "w");
-
-        fprintf(hndl_poses,
-            "set datafile separator ','\n"
-            "set key autotitle columnhead\n"
-            "set size ratio -1\n"
-            "plot '%s.map.csv' title 'Map (from front scans)' with points pointsize 0.2 "
-            "pointtype 5 linecolor rgb '#555555', \\\n"
-            "'%s.pose.csv' using 2:3 title 'Pose (back lidar)' with linespoints linewidth 0.7 "
-            "pointtype 6 pointsize 0.7 linecolor rgb '#ff0000', \\\n"
-            "'%s.pose.csv' using 5:6 title 'Odometry' with linespoints linewidth 0.7 pointtype "
-            "6 pointsize 0.7 linecolor rgb '#0000ff'\n"
-            "pause 1000\n",
-            filename,
-            filename,
-            filename);
-
-        fclose(hndl_poses);
+    if (0 == counter) {
+      cv::line(img, cv::Point(x, y), cv::Point(x + dx, y + dy),
+               cv::Scalar(40, 40, 80));
     }
+
+    cv::circle(img, cv::Point(x, y), 2, cv::Scalar(0, 0, 255));
+
+    counter = (counter + 1) % 5;
+#endif
+    if (save_points) {
+      fprintf(hndl_poses, "%.6f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+              this->s_timestamps[i], this->s_poses[i].x(), this->s_poses[i].y(),
+              this->s_poses[i].z(), this->s_odoms[i].x(), this->s_odoms[i].y(),
+              this->s_odoms[i].z());
+    }
+  }
+
+  if (save_poses)
+    fclose(hndl_poses);
+
+  if (save_points)
+    fclose(hndl_points);
+
+  if (save_poses || save_points) {
+    // Save the .gnuplot file to plot the outputs
+    sprintf(output_filename, "%s.gnuplot", filename);
+    hndl_poses = fopen(output_filename, "w");
+
+    fprintf(hndl_poses, "set datafile separator ','\n"
+                        "set key autotitle columnhead\n"
+                        "set size ratio -1\n"
+                        "plot ");
+
+    if (save_points) {
+      fprintf(hndl_poses,
+              "'%s.map.csv' title 'Map' with points "
+              "pointsize 0.2 "
+              "pointtype 5 linecolor rgb '#555555'",
+              filename);
+    }
+
+    if (save_poses) {
+      fprintf(hndl_poses,
+              ", \\\n"
+              "'%s.pose.csv' using 2:3 title 'Pose (LiDAR)' with "
+              "linespoints linewidth 0.7 "
+              "pointtype 6 pointsize 0.7 linecolor rgb '#ff0000'",
+              filename);
+    }
+
+    if (save_poses) {
+      fprintf(hndl_poses,
+              ", \\\n"
+              "'%s.pose.csv' using 5:6 title 'Odometry' with linespoints "
+              "linewidth 0.7 pointtype "
+              "6 pointsize 0.7 linecolor rgb '#0000ff'",
+              filename);
+    }
+
+    fprintf(hndl_poses, "\n"
+                        "pause 1000\n");
+
+    fclose(hndl_poses);
+  }
 
 #ifdef OPENCV_FOUND
-    if (save_image) {
-        sprintf(output_filename, "%s-w%d-%dp%di-%dx%d-c%.2f-%dppm.png",
-            filename, NDT_WINDOW_SIZE, this->s_config.psoConfig.populationSize, this->s_config.psoConfig.iterations,
-            this->width, this->height, this->cell_side, density);
+  if (save_image) {
+    sprintf(output_filename, "%s-w%d-%dp%di-%dx%d-c%.2f-%dppm.png", filename,
+            NDT_WINDOW_SIZE, this->s_config.psoConfig.populationSize,
+            this->s_config.psoConfig.iterations, this->width, this->height,
+            this->cell_side, density);
 
-        imwrite(output_filename, img);
-    }
+    imwrite(output_filename, img);
+  }
 
 #if BUILD_OCCUPANCY_GRID
-    if (save_occupancy_grid) {
-        uint32_t real_width = this->s_occupancy_grid.max_x_ind - this->s_occupancy_grid.min_x_ind,
-                 real_heigth = this->s_occupancy_grid.max_y_ind - this->s_occupancy_grid.min_y_ind;
+  if (save_occupancy_grid) {
+    uint32_t real_width = this->s_occupancy_grid.max_x_ind -
+                          this->s_occupancy_grid.min_x_ind,
+             real_heigth = this->s_occupancy_grid.max_y_ind -
+                           this->s_occupancy_grid.min_y_ind;
 
-        cv::Mat img_og(static_cast<int>(real_heigth), static_cast<int>(real_width), CV_8U, cv::Scalar::all(255));
+    cv::Mat img_og(static_cast<int>(real_heigth), static_cast<int>(real_width),
+                   CV_8U, cv::Scalar::all(255));
 
-        for (uint32_t i = this->s_occupancy_grid.min_x_ind; i <= this->s_occupancy_grid.max_x_ind; ++i) {
-            for (uint32_t j = this->s_occupancy_grid.min_y_ind; j <= this->s_occupancy_grid.max_y_ind; ++j) {
-                size_t ind = i + this->s_occupancy_grid.height * j;
-                if (this->s_occupancy_grid.og[ind] > 0) {
-                    img_og.at<uint8_t>(
-                        int(real_heigth - (j - this->s_occupancy_grid.min_y_ind)),
-                        int(i - this->s_occupancy_grid.min_x_ind))
-                        = uint8_t(255.0 - this->s_occupancy_grid.og[i + this->s_occupancy_grid.height * j] * 2.55);
-                }
-            }
+    for (uint32_t i = this->s_occupancy_grid.min_x_ind;
+         i <= this->s_occupancy_grid.max_x_ind; ++i) {
+      for (uint32_t j = this->s_occupancy_grid.min_y_ind;
+           j <= this->s_occupancy_grid.max_y_ind; ++j) {
+        size_t ind = i + this->s_occupancy_grid.height * j;
+        if (this->s_occupancy_grid.og[ind] > 0) {
+          img_og.at<uint8_t>(
+              int(real_heigth - (j - this->s_occupancy_grid.min_y_ind)),
+              int(i - this->s_occupancy_grid.min_x_ind)) =
+              uint8_t(255.0 -
+                      this->s_occupancy_grid
+                              .og[i + this->s_occupancy_grid.height * j] *
+                          2.55);
         }
-
-        sprintf(output_filename, "%s-%dx%d-cell%.2fm-occupancy-grid.png",
-            filename, this->s_occupancy_grid.width, this->s_occupancy_grid.height, this->s_occupancy_grid.cell_size);
-
-        imwrite(output_filename, img_og);
+      }
     }
+
+    sprintf(output_filename, "%s-%dx%d-cell%.2fm-occupancy-grid.png", filename,
+            this->s_occupancy_grid.width, this->s_occupancy_grid.height,
+            this->s_occupancy_grid.cell_size);
+
+    imwrite(output_filename, img_og);
+  }
 #endif
 #endif
 }

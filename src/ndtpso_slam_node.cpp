@@ -373,21 +373,26 @@ int main(int argc, char** argv)
     sprintf(filename, "%s-%s", param_scan_topic.c_str(), time_formated);
 
 #if SAVE_MAP_DATA_TO_FILE
-    global_map->dumpMap(filename, true, true, true, 100
+  global_map->dumpMap(filename, true, true, SAVE_MAP_IMAGES, 100
 #if BUILD_OCCUPANCY_GRID
-        ,
-        false
+                      ,
+                      true
 #endif
-    );
-    cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
+  );
+
+  cout << "Map saved to file " << filename
+       << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
 #endif
-    sprintf(filename, "%s-%s-ref-frame", param_scan_topic.c_str(), time_formated);
-        
-    ref_frame->dumpMap(filename, true, true, true, 100
+
+  sprintf(filename, "%s-%s-ref-frame", param_scan_topic.c_str(), time_formated);
+
+  ref_frame->dumpMap(filename, false, true, SAVE_MAP_IMAGES, 100
 #if BUILD_OCCUPANCY_GRID
-        ,
-        true
+                     ,
+                     true
 #endif
-    );
-    cout << "Map saved to file " << filename << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
+  );
+
+  cout << "Map saved to file " << filename
+       << "[.pose.csv, .map.csv, .png, .gnuplot]" << endl;
 }
