@@ -15,42 +15,39 @@
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
 #endif
 
-NDTFrame::NDTFrame(Vector3d trans,
-    unsigned short width,
-    unsigned short height,
-    double cell_side,
-    bool calculate_cells_params,
-    NDTPSOConfig config
+NDTFrame::NDTFrame(Vector3d trans, unsigned short width, unsigned short height,
+                   double cell_side, bool calculate_cells_params,
+                   NDTPSOConfig config
 #if BUILD_OCCUPANCY_GRID
-    ,
-    double occupancy_grid_cell_size
+                   ,
+                   double occupancy_grid_cell_size
 #endif
-    )
-    : s_trans(std::move(trans))
-    , s_config(std::move(config))
-    , width(width)
-    , height(height)
-    , cell_side(cell_side)
-{
-    this->built = false;
-    this->widthNumOfCells = uint16_t(ceil(width / cell_side));
-    this->heightNumOfCells = uint16_t(ceil(height / cell_side));
-    this->numOfCells = widthNumOfCells * heightNumOfCells;
-    this->cells = vector<NDTCell>(this->numOfCells, NDTCell(calculate_cells_params));
+                   )
+    : s_trans(std::move(trans)), s_config(std::move(config)), width(width),
+      height(height), cell_side(cell_side) {
+  this->built = false;
+  this->widthNumOfCells = uint16_t(ceil(width / cell_side));
+  this->heightNumOfCells = uint16_t(ceil(height / cell_side));
+  this->numOfCells = widthNumOfCells * heightNumOfCells;
+  this->cells =
+      vector<NDTCell>(this->numOfCells, NDTCell(calculate_cells_params));
 
 #if BUILD_OCCUPANCY_GRID
-    // Initializing the occupancy grid,
-    this->s_occupancy_grid.cell_size = occupancy_grid_cell_size;
+  // Initializing the occupancy grid,
+  this->s_occupancy_grid.cell_size = occupancy_grid_cell_size;
 
-    // I case of zero size cell, all operations on the occupancy grid are ommited,
-    // This saves some computing time when OG aren't needed (like in intermediate
-    // frames used for loading laser data and matching)
-    if (occupancy_grid_cell_size > 0.) {
-        this->s_occupancy_grid.width = uint32_t(ceil(width / occupancy_grid_cell_size));
-        this->s_occupancy_grid.height = uint32_t(ceil(height / occupancy_grid_cell_size));
-        this->s_occupancy_grid.count = this->s_occupancy_grid.width * this->s_occupancy_grid.height;
-        this->s_occupancy_grid.og = vector<int8_t>(this->s_occupancy_grid.count, 0);
-    }
+  // I case of zero size cell, all operations on the occupancy grid are ommited,
+  // This saves some computing time when OG aren't needed (like in intermediate
+  // frames used for loading laser data and matching)
+  if (occupancy_grid_cell_size > 0.) {
+    this->s_occupancy_grid.width =
+        uint32_t(ceil(width / occupancy_grid_cell_size));
+    this->s_occupancy_grid.height =
+        uint32_t(ceil(height / occupancy_grid_cell_size));
+    this->s_occupancy_grid.count =
+        this->s_occupancy_grid.width * this->s_occupancy_grid.height;
+    this->s_occupancy_grid.og = vector<int8_t>(this->s_occupancy_grid.count, 0);
+  }
 #endif
 
 #if false
@@ -63,95 +60,102 @@ NDTFrame::NDTFrame(Vector3d trans,
         this->s_x_max = width - 8.2; // <-- and here!
     } else {
 #endif
-    this->s_x_min = -width / 2.;
-    this->s_x_max = width / 2.;
+  this->s_x_min = -width / 2.;
+  this->s_x_max = width / 2.;
 
 #if false
     }
 #endif
 
-    this->s_y_min = -height / 2.;
-    this->s_y_max = height / 2.;
+  this->s_y_min = -height / 2.;
+  this->s_y_max = height / 2.;
 }
 
-void NDTFrame::build()
-{
+void NDTFrame::build() {
 #if BUILD_OCCUPANCY_GRID
-    auto og_cells_per_cell = static_cast<uint32_t>(floor(this->cell_side / this->s_occupancy_grid.cell_size));
+  auto og_cells_per_cell = static_cast<uint32_t>(
+      floor(this->cell_side / this->s_occupancy_grid.cell_size));
 #endif
 
-    for (unsigned int i = 0; i < this->numOfCells; ++i) {
-        auto current_cell = &this->cells[i];
+  for (unsigned int i = 0; i < this->numOfCells; ++i) {
+    auto current_cell = &this->cells[i];
 
-        if (current_cell->created) {
-            current_cell->build();
+    if (current_cell->created) {
+      current_cell->build();
 
 #if BUILD_OCCUPANCY_GRID
-            if (this->s_occupancy_grid.cell_size > 0.) {
-                uint32_t cell_x_ind = i % this->widthNumOfCells,
-                         cell_y_ind = i / this->heightNumOfCells;
+      if (this->s_occupancy_grid.cell_size > 0.) {
+        uint32_t cell_x_ind = i % this->widthNumOfCells,
+                 cell_y_ind = i / this->heightNumOfCells;
 
-                for (uint32_t j = 0; j < og_cells_per_cell; ++j) {
-                    for (uint32_t k = 0; k < og_cells_per_cell; ++k) {
-                        double x_c = ((cell_x_ind * og_cells_per_cell + j)
-                                             * this->s_occupancy_grid.cell_size
-                                         + this->s_occupancy_grid.cell_size / 2.)
-                            - (this->width / 2.);
+        for (uint32_t j = 0; j < og_cells_per_cell; ++j) {
+          for (uint32_t k = 0; k < og_cells_per_cell; ++k) {
+            double x_c = ((cell_x_ind * og_cells_per_cell + j) *
+                              this->s_occupancy_grid.cell_size +
+                          this->s_occupancy_grid.cell_size / 2.) -
+                         (this->width / 2.);
 
-                        double y_c = ((cell_y_ind * og_cells_per_cell + k)
-                                             * this->s_occupancy_grid.cell_size
-                                         + this->s_occupancy_grid.cell_size / 2.)
-                            - (this->height / 2.);
+            double y_c = ((cell_y_ind * og_cells_per_cell + k) *
+                              this->s_occupancy_grid.cell_size +
+                          this->s_occupancy_grid.cell_size / 2.) -
+                         (this->height / 2.);
 
-                        auto p = current_cell->normalDistribution(Vector2d(x_c, y_c)) /* - 0.5*/;
+            auto p =
+                current_cell->normalDistribution(Vector2d(x_c, y_c)) /* - 0.5*/;
 
-                        if (p > 0.) {
-                            uint32_t og_x_ind = cell_x_ind * og_cells_per_cell + j;
-                            uint32_t og_y_ind = cell_y_ind * og_cells_per_cell + k;
+            if (p > 0.) {
+              uint32_t og_x_ind = cell_x_ind * og_cells_per_cell + j;
+              uint32_t og_y_ind = cell_y_ind * og_cells_per_cell + k;
 
-                            /*
-                             * TODO: move this outside to store the max/min x and y, as coordinates not as indexes,
-                             * so the same info can be used with the point cloud map
-                             */
-                            this->s_occupancy_grid.min_x_ind = MIN(og_x_ind, this->s_occupancy_grid.min_x_ind);
-                            this->s_occupancy_grid.max_x_ind = MAX(og_x_ind, this->s_occupancy_grid.max_x_ind);
-                            this->s_occupancy_grid.min_y_ind = MIN(og_y_ind, this->s_occupancy_grid.min_y_ind);
-                            this->s_occupancy_grid.max_y_ind = MAX(og_y_ind, this->s_occupancy_grid.max_y_ind);
+              /*
+               * TODO: move this outside to store the max/min x and y, as
+               * coordinates not as indexes, so the same info can be used with
+               * the point cloud map
+               */
+              this->s_occupancy_grid.min_x_ind =
+                  MIN(og_x_ind, this->s_occupancy_grid.min_x_ind);
+              this->s_occupancy_grid.max_x_ind =
+                  MAX(og_x_ind, this->s_occupancy_grid.max_x_ind);
+              this->s_occupancy_grid.min_y_ind =
+                  MIN(og_y_ind, this->s_occupancy_grid.min_y_ind);
+              this->s_occupancy_grid.max_y_ind =
+                  MAX(og_y_ind, this->s_occupancy_grid.max_y_ind);
 
-                            this->s_occupancy_grid.og[og_x_ind + this->s_occupancy_grid.height * og_y_ind] = int8_t(p * 100.);
-                        }
-                    }
-                }
+              this->s_occupancy_grid
+                  .og[og_x_ind + this->s_occupancy_grid.height * og_y_ind] =
+                  int8_t(p * 100.);
             }
-#endif
+          }
         }
+      }
+#endif
     }
+  }
 
-    this->built = true;
+  this->built = true;
 }
 
-void NDTFrame::transform(Vector3d trans)
-{
-    if (!trans.isZero(1e-6)) {
-        vector<NDTCell>* old_cells = &this->cells;
+void NDTFrame::transform(Vector3d trans) {
+  if (!trans.isZero(1e-6)) {
+    vector<NDTCell> *old_cells = &this->cells;
 
-        this->cells = vector<NDTCell>(this->numOfCells);
+    this->cells = vector<NDTCell>(this->numOfCells);
 
-        //for (unsigned int i = 0; i < this->numOfCells; ++i)
-        for (auto& old_cell : (*old_cells)) {
-            if (old_cell.created) {
-                for (auto& points : old_cell.points) {
-                    for (auto& point : points) {
-                        Vector2d new_point = transform_point(point, trans);
-                        this->addPoint(new_point);
-                    }
-                }
-            }
+    // for (unsigned int i = 0; i < this->numOfCells; ++i)
+    for (auto &old_cell : (*old_cells)) {
+      if (old_cell.created) {
+        for (auto &points : old_cell.points) {
+          for (auto &point : points) {
+            Vector2d new_point = transform_point(point, trans);
+            this->addPoint(new_point);
+          }
         }
-
-        delete old_cells;
-        this->built = false;
+      }
     }
+
+    delete old_cells;
+    this->built = false;
+  }
 }
 
 // Initialize the cell from laser data according to the device sensibility and
@@ -202,74 +206,76 @@ void NDTFrame::loadLaser(vector<float> const &laser_data,
   }
 }
 
-void NDTFrame::update(Vector3d trans, NDTFrame* const new_frame)
-{
-    this->built = false; // Set 'built' flag to false to rebuild the cell if needed
+void NDTFrame::update(Vector3d trans, NDTFrame *const new_frame) {
+  this->built =
+      false; // Set 'built' flag to false to rebuild the cell if needed
 
-    for (auto& new_frame_cell : new_frame->cells) {
-        if (new_frame_cell.created) {
-            for (auto& point : new_frame_cell.points[0]) {
-                Vector2d pt = transform_point(point, trans);
-                this->addPoint(pt);
-            }
-        }
+  for (auto &new_frame_cell : new_frame->cells) {
+    if (new_frame_cell.created) {
+      for (auto &point : new_frame_cell.points[0]) {
+        Vector2d pt = transform_point(point, trans);
+        this->addPoint(pt);
+      }
     }
+  }
 }
 
-void NDTFrame::addPose(double timestamp, const Vector3d& pose, const Vector3d& odom)
-{
-    // Used only for saving the global map image (if any), for scan matching; there is no need for this. Useful for debug
-    this->s_timestamps.push_back(timestamp);
-    this->s_poses.push_back(pose);
-    this->s_odoms.push_back(odom);
+void NDTFrame::addPose(double timestamp, const Vector3d &pose,
+                       const Vector3d &odom) {
+  // Used only for saving the global map image (if any), for scan matching;
+  // there is no need for this. Useful for debug
+  this->s_timestamps.push_back(timestamp);
+  this->s_poses.push_back(pose);
+  this->s_odoms.push_back(odom);
 }
 
-void NDTFrame::resetCells()
-{
-    auto n = static_cast<unsigned int>(this->cells.size());
-    for (unsigned int i = 0; i < n; ++i)
-        this->cells[i].reset();
+void NDTFrame::resetCells() {
+  auto n = static_cast<unsigned int>(this->cells.size());
+  for (unsigned int i = 0; i < n; ++i)
+    this->cells[i].reset();
 }
 
 // Add the given point 'pt' to it's corresponding cell
-void NDTFrame::addPoint(Vector2d& point)
-{
-    // Get the cell index in the list
-    int cell_index = this->getCellIndex(point, this->widthNumOfCells, this->cell_side);
+void NDTFrame::addPoint(Vector2d &point) {
+  // Get the cell index in the list
+  int cell_index =
+      this->getCellIndex(point, this->widthNumOfCells, this->cell_side);
 
-    // If the point is contained in the frame borders and it's not at the origin
-    if (-1 != cell_index) {
-        // And then, append the point to its cell points list
-        this->cells[static_cast<size_t>(cell_index)].addPoint(point);
+  // If the point is contained in the frame borders and it's not at the origin
+  if (-1 != cell_index) {
+    // And then, append the point to its cell points list
+    this->cells[static_cast<size_t>(cell_index)].addPoint(point);
 
-        this->built = false; // Set 'built' flag to false to rebuild the cell if needed
-    }
+    this->built =
+        false; // Set 'built' flag to false to rebuild the cell if needed
+  }
 
 #if BUILD_OCCUPANCY_GRID && false
-    if (this->s_occupancy_grid.cell_size > 0.) {
-        cell_index = this->getCellIndex(point,
-            static_cast<int>(this->s_occupancy_grid.width),
-            this->s_occupancy_grid.cell_size);
-        if (-1 != cell_index) {
-            this->s_occupancy_grid.og[static_cast<unsigned int>(cell_index)]++;
-        }
+  if (this->s_occupancy_grid.cell_size > 0.) {
+    cell_index = this->getCellIndex(
+        point, static_cast<int>(this->s_occupancy_grid.width),
+        this->s_occupancy_grid.cell_size);
+    if (-1 != cell_index) {
+      this->s_occupancy_grid.og[static_cast<unsigned int>(cell_index)]++;
     }
+  }
 #endif
 }
 
-// volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**); // Just for fun!
+// volatile const char *(*signal(int const * b, void (*fp)(int*)))(int**); //
+// Just for fun!
 
-int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side)
-{
-    // If the point is contained inside the FRAME borders
-    if ((point.x() > this->s_x_min) && (point.x() < this->s_x_max)
-        && (point.y() > this->s_y_min) && (point.y() < this->s_y_max)) {
-        // Then return the index of the its corresponding CELL
-        return static_cast<int>(floor((point.x() + (this->width / 2.)) / cell_side)
-            + grid_width * (floor((point.y() + (this->height / 2.)) / cell_side)));
-    }
+int NDTFrame::getCellIndex(Vector2d point, int grid_width, double cell_side) {
+  // If the point is contained inside the FRAME borders
+  if ((point.x() > this->s_x_min) && (point.x() < this->s_x_max) &&
+      (point.y() > this->s_y_min) && (point.y() < this->s_y_max)) {
+    // Then return the index of the its corresponding CELL
+    return static_cast<int>(
+        floor((point.x() + (this->width / 2.)) / cell_side) +
+        grid_width * (floor((point.y() + (this->height / 2.)) / cell_side)));
+  }
 
-    return -1;
+  return -1;
 }
 
 Vector3d NDTFrame::align(Vector3d initial_guess,
