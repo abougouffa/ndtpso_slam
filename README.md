@@ -13,5 +13,5 @@ Abdelhak BOUGOUFFA, Paris-Saclay University, SATIE Laboratory
 <`abdelhak [dot] bougouffa [at] universite-paris-saclay.fr`>
 
 ### To cite this work:
-- [1]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020 (Accepted).
-- [2]: **Abdelhak BOUGOUFFA**, **Emmanuel SEIGNEZ**, **Samir BOUAZIZ** and **Florian GARDES**, _SmartTrolley: An Experimental Mobile Platform for Indoor Localization in Warehouses_, 3rd International Conference on Robotics, Control and Automation Engineering (RCAE 2020), Nov 2020 (Accepted).
+- [1]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _Particle Swarm Optimization for Solving a Scan-Matching Problem Based on the Normal Distributions Transform_, [`10.1007/s12065-020-00545-y`](https://doi.org/10.1007/s12065-020-00545-y), Evolutionary Intelligence, Jan 2021.
+- [2]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, [`10.1109/ICARCV50220.2020.9305519`](https://doi.org/10.1109/ICARCV50220.2020.9305519), 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020.
