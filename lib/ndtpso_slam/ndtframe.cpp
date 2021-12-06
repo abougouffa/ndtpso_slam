@@ -1,10 +1,13 @@
 #include "ndtpso_slam/ndtframe.h"
 #include "ndtpso_slam/core.h"
 #include <cstdio>
-#include <utility>
 
 #ifdef OPENCV_FOUND
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+
 #endif
 
 #ifndef MIN

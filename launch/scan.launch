@@ -9,7 +9,11 @@
         <rosparam param="iterations">30</rosparam>
         <rosparam param="frame_size">300</rosparam>
         <rosparam param="scan_topic">"/s300ttyS0/scan"</rosparam>
-        <remap from="/ndtpso_slam_node/pose" to="/ndtpso_slam_node/pose_front"/> 
+        <rosparam param="scan_frame">"lidar_front"</rosparam>
+        <remap from="/ndtpso_slam_node/pose" to="/ndtpso_slam_node/pose_front"/>
         <!-- <remap from="~odom" to="/odom"/>                 -->
     </node>
+
+    <!-- Publish the associated static transform -->
+    <node name="static_tf" pkg="tf" type="static_transform_publisher" output="screen" args="0.65 0.44 0 0.82 0 0 base_link lidar_front 10" />
 </launch>

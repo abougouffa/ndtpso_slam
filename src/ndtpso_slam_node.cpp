@@ -15,6 +15,7 @@
 #include <mutex>
 #include <string>
 #include <tf/transform_listener.h>
+#include <algorithm>
 
 #define NDTPSO_SLAM_VERSION "1.5.0"
 
@@ -26,9 +27,9 @@
 #define WAIT_FOR_TF true
 #define DEFAULT_CELL_SIZE_M .5
 #define DEFAULT_FRAME_SIZE_M 100
-#define DEFAULT_SCAN_TOPIC "/scan_front"
+#define DEFAULT_SCAN_TOPIC "/scan"
 #define DEFAULT_ODOM_TOPIC "/odom"
-#define DEFAULT_LIDAR_FRAME "lidar_front"
+#define DEFAULT_LIDAR_FRAME "scan"
 #define DEFAULT_OUTPUT_MAP_SIZE_M 25
 #define DEFAULT_RATE_HZ 10
 
@@ -40,7 +41,7 @@
  * the frame_id should be the same reference frame as odometry (in general
  * "odom" for "/odom")
  */
-#define DEFAULT_PUBLISHED_POSE_FRAME_ID "odom"
+#define DEFAULT_PUBLISHED_POSE_FRAME_ID "map"
 
 using namespace Eigen;
 using std::cout;
@@ -307,10 +308,11 @@ int main(int argc, char **argv)
   current_frame->setTrans(initial_trans);
 #endif
 
-  previous_pose = current_pose = initial_pose = Vector3d::Zero();
+  previous_pose = current_pose = Vector3d::Zero();
+  initial_pose = initial_trans;
 
-  ROS_INFO("Starting from initial pose (%.5f, %.5f, %.5f)", initial_pose.x(),
-           initial_pose.y(), initial_pose.z());
+  ROS_INFO("Starting from initial pose (%.5f, %.5f, %.5f)",
+               initial_pose.x(), initial_pose.y(), initial_pose.z());
 
 #if SYNC_WITH_ODOM || SYNC_WITH_LASER_TOPIC
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::LaserScan

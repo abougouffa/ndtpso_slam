@@ -68,7 +68,7 @@ Vector3d pso_optimization(Vector3d initial_guess, NDTFrame *ref_frame,
   vector<Particle> particles;
 
   // Use the initial guess as an initial global best, using a zero deviation
-  Particle global_best(initial_guess.array(), zero_devi, ref_frame, new_frame);
+  Particle global_best(initial_guess.array(), deviation, ref_frame, new_frame);
 
   for (unsigned i = 0; i < static_cast<unsigned>(pso_conf.populationSize);
        ++i) {
