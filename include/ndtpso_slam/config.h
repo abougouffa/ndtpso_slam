@@ -10,7 +10,6 @@
 #define TRANSFORM_POSE_AFTER_ALIGN (!TRANSFORM_POINTS_AT_LOAD)
 #define PREFER_FRONTAL_POINTS false // Disabled
 #define BUILD_OCCUPANCY_GRID true
-
 #define USE_LOGGER false
 
 #if USE_LOGGER
@@ -29,6 +28,7 @@ struct PSOConfig {
   int iterations{PSO_ITERATIONS};
   int populationSize{PSO_POPULATION_SIZE};
   int num_threads{-1};
+
   struct {
     double w{PSO_W};
     double c1{PSO_C1};

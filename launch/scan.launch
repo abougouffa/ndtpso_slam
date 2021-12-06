@@ -1,19 +1,22 @@
 <launch>
-    <node name="ndtpso_slam_front" pkg="ndtpso_slam" type="ndtpso_slam_node" output="screen">
-        <!-- <rosparam param="og_cell_side">0.01</rosparam>   -->
-        <!-- <rosparam param="odom_topic">"odom"</rosparam>   -->
-        <!-- <rosparam param="rate">10</rosparam>             -->
-        <!-- <rosparam param="cell_side">0.5</rosparam>       -->
-        <rosparam param="map_size">300</rosparam>
-        <rosparam param="num_threads">8</rosparam>
-        <rosparam param="iterations">30</rosparam>
+    <node name="ndtpso_slam_node" pkg="ndtpso_slam" type="ndtpso_slam_node" output="screen">
+        <rosparam param="scan_topic">"/laser_1/scan"</rosparam>
+        <rosparam param="scan_frame_id">"laser_1"</rosparam>
+        <rosparam param="base_frame_id">"laser_1"</rosparam>
+        <rosparam param="global_frame_id">"map"</rosparam>
+        <rosparam param="odom_frame_id">"odom"</rosparam>
+        <rosparam param="map_size_m">300</rosparam>
+        <rosparam param="pso_num_threads">8</rosparam>
+        <rosparam param="pso_iterations">30</rosparam>
+        <rosparam param="pso_population">50</rosparam>
         <rosparam param="frame_size">300</rosparam>
-        <rosparam param="scan_topic">"/s300ttyS0/scan"</rosparam>
-        <rosparam param="scan_frame">"lidar_front"</rosparam>
-        <remap from="/ndtpso_slam_node/pose" to="/ndtpso_slam_node/pose_front"/>
-        <!-- <remap from="~odom" to="/odom"/>                 -->
+        <rosparam param="cell_size">0.5</rosparam>
+        <rosparam param="rate_hz">10</rosparam>
+        <rosparam param="initial_pose_x">0.0</rosparam>
+        <rosparam param="initial_pose_y">0.0</rosparam>
+        <rosparam param="initial_pose_a">0.0</rosparam>
     </node>
 
     <!-- Publish the associated static transform -->
-    <node name="static_tf" pkg="tf" type="static_transform_publisher" output="screen" args="0.65 0.44 0 0.82 0 0 base_link lidar_front 10" />
+    <node name="static_tf" pkg="tf" type="static_transform_publisher" output="screen" args="0.65 0 0 0 0 0 base_link lidar_1 100" />
 </launch>

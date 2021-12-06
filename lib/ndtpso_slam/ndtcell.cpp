@@ -2,8 +2,8 @@
 #include <cstdio>
 #include <eigen3/Eigen/Eigen>
 
-NDTCell::NDTCell(bool calculate_params) {
-  if (calculate_params) {
+NDTCell::NDTCell(bool init_cell_window) {
+  if (init_cell_window) {
     for (unsigned int i = 0; i < NDT_WINDOW_SIZE; ++i) {
       this->s_partial_sums[i] = Vector2d::Zero();
       this->s_partial_counts[i] = 0;
@@ -23,12 +23,12 @@ void NDTCell::addPoint(const Vector2d &point) {
     // For the first call after building the cell (so the first call after the
     // previous iteration) we reset all the points of the corresponding
     // iteration in the points buffer
-    this->points[this->s_current_window_id] = vector<Vector2d>();
+    this->points_vector[this->s_current_window_id] = vector<Vector2d>();
   }
 
   this->s_current_count++;
   this->s_current_partial_sum += point;
-  this->points[this->s_current_window_id].push_back(std::move(point));
+  this->points_vector[this->s_current_window_id].push_back(std::move(point));
   this->created = true;
   this->built = false;
 }
@@ -46,7 +46,7 @@ bool NDTCell::build() {
     Matrix2d cov = Matrix2d::Zero();
     Vector2d distance_from_mean;
 
-    for (auto &pt : this->points[this->s_current_window_id]) {
+    for (auto &pt : this->points_vector[this->s_current_window_id]) {
       distance_from_mean = pt - this->mean;
       cov += (distance_from_mean * distance_from_mean.transpose());
     }
@@ -85,8 +85,8 @@ void NDTCell::reset() {
   this->s_global_covar_sum = Matrix2d::Zero();
   this->s_current_window_id = 0;
 
-  for (auto &point : this->points) {
-    point.clear();
+  for (auto &points_vec : this->points_vector) {
+    points_vec.clear();
   }
 }
 
