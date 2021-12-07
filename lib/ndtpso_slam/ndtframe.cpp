@@ -165,7 +165,7 @@ void NDTFrame::loadLaser(vector<float> const& laser_data, float const& min_angle
     if ((laser_data[i] > 0.) && (laser_data[i] < max_range) && (laser_data[i] > this->s_config.laserIgnoreEpsilon)) {
       theta = index_to_angle(i, angle_increment, min_angle);
 #if PREFER_FRONTAL_POINTS
-      delta_theta += sinf(theta);
+      delta_theta += cosf(theta);
 
       if (fabsf(delta_theta) > .5f) {
 #endif
