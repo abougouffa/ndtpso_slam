@@ -2,7 +2,7 @@ NDTPSO-SLAM
 ===========
 
 NDTPSO-SLAM is a ROS package which provides an enhanced implementation of the scan matching algorithm proposed in [1] and [2].
-It uses NDT (Normal Distribution Transform) to model the environnement and PSO (Particle Swarm Optimisation) to perform the scan matching optimization and solve the pose problem.
+It uses NDT (Normal Distribution Transform) to model the environment and PSO (Particle Swarm Optimisation) to perform the scan matching optimization and solve the pose problem.
 
 This package has been tested with ROS Melodic on Ubuntu 18.04, however; it should work with newer ROS1 versions.
 
