@@ -4,6 +4,8 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include <tf2_ros/transform_listener.h>
+#include <tf2/utils.h>
 
 // The odometry is used just for the initial pose to be easily compared with our
 // calculated pose
@@ -79,16 +81,25 @@ NDTPSONode::NDTPSONode(ros::NodeHandle& nh) {
 
   // If the two frames are equal, there is no need to transform it
   if (param_base_frame_id_ != param_scan_frame_id_) {
-    tf::TransformListener tf_listener(ros::Duration(1));
-    tf::StampedTransform transform;
+    tf2_ros::Buffer tf_buffer;
+    tf2_ros::TransformListener tf_listener(tf_buffer);
+    geometry_msgs::TransformStamped tf_stamped;
     ROS_INFO("Waiting for tf \"%s\" -> \"%s\"", param_base_frame_id_.c_str(), param_scan_frame_id_.c_str());
-    while (!tf_listener.waitForTransform(param_base_frame_id_, param_scan_frame_id_, ros::Time(0), ros::Duration(2)))
-      ;
 
-    tf_listener.lookupTransform(param_base_frame_id_, param_scan_frame_id_, ros::Time(0), transform);
+    while (true) {
+      try {
+        tf_stamped = tf_buffer.lookupTransform(param_base_frame_id_, param_scan_frame_id_, ros::Time(0.0));
+      } catch (tf2::TransformException& e) {
+        ROS_WARN("Failed getting TF, error: %s", e.what());
+        ros::Duration(2.0).sleep();
+        continue;
+      }
 
-    auto init_trans = transform.getOrigin();
-    auto initial_trans = Vector3d(init_trans.getX(), init_trans.getY(), tf::getYaw(transform.getRotation()));
+      break;
+    }
+
+    auto initial_trans =
+        Vector3d(tf_stamped.transform.translation.x, tf_stamped.transform.translation.y, tf2::getYaw(tf_stamped.transform.rotation));
 
     ROS_INFO("Got and latched a tf (\"%s\" -> \"%s\") = (%.5f, %.5f, %.5f)", param_base_frame_id_.c_str(), param_scan_frame_id_.c_str(),
              initial_trans.x(), initial_trans.y(), initial_trans.z());
@@ -126,8 +137,8 @@ NDTPSONode::NDTPSONode(ros::NodeHandle& nh) {
   strftime(time_formated, sizeof(time_formated), "%Y%m%d-%H%M%S", timeinfo);
 
   std::cout << std::endl
-       << "Exporting results "
-       << "[.pose.csv, .map.csv, .png, .gnuplot]" << std::endl;
+            << "Exporting results "
+            << "[.pose.csv, .map.csv, .png, .gnuplot]" << std::endl;
 
   size_t pos = 0;
 
@@ -143,8 +154,8 @@ NDTPSONode::NDTPSONode(ros::NodeHandle& nh) {
 #if SAVE_MAP_DATA_TO_FILE
   global_map_->dumpMap(filename, true, true, SAVE_MAP_IMAGES, 100
 #if BUILD_OCCUPANCY_GRID
-                      ,
-                      true
+                       ,
+                       true
 #endif
   );
 
@@ -155,8 +166,8 @@ NDTPSONode::NDTPSONode(ros::NodeHandle& nh) {
 
   ref_frame_->dumpMap(filename, false, true, SAVE_MAP_IMAGES, 100
 #if BUILD_OCCUPANCY_GRID
-                     ,
-                     true
+                      ,
+                      true
 #endif
   );
 
@@ -203,7 +214,7 @@ void NDTPSONode::scan_matcher_(const sensor_msgs::LaserScanConstPtr& scan) {
   current_pose_msg_.pose.position.y = current_pose_.y();
   current_pose_msg_.pose.position.z = 0.;
 
-  tf::Quaternion q_ori;
+  tf2::Quaternion q_ori;
   q_ori.setRPY(0, 0, current_pose_.z());
   current_pose_msg_.pose.orientation.x = q_ori.getX();
   current_pose_msg_.pose.orientation.y = q_ori.getY();

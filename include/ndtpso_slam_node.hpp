@@ -2,6 +2,7 @@
 #define NDTPSO_SLAM_NODE_H_
 
 #include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/TransformStamped.h"
 #include "ndtpso_slam/ndtcell.h"
 #include "ndtpso_slam/ndtframe.h"
 #include "ros/ros.h"
@@ -10,7 +11,6 @@
 #include <string>
 #include <eigen3/Eigen/Core>
 #include <mutex>
-#include <tf/transform_listener.h>
 // #include <ctime>
 // #include <iostream>
 
