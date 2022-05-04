@@ -1,7 +1,7 @@
 NDTPSO-SLAM
 ===========
 
-NDTPSO-SLAM is a ROS package which provides an enhanced implementation of the scan matching algorithm proposed in [1] and [2].
+NDTPSO-SLAM is a ROS package which provides an enhanced implementation of the scan matching algorithm proposed in [^art] and [^conf].
 It uses NDT (Normal Distribution Transform) to model the environment and PSO (Particle Swarm Optimisation) to perform the scan matching optimization and solve the pose problem.
 
 This package has been tested with ROS Melodic on Ubuntu 18.04, however; it should work with newer ROS1 versions.
@@ -37,3 +37,7 @@ You can edit the provided launch files to fit your LiDAR topic name and run:
 ```shell
 roslaunch ndtpso_slam scan.launch
 ```
+
+[^art]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _Particle Swarm Optimization for Solving a Scan-Matching Problem Based on the Normal Distributions Transform_, [`10.1007/s12065-020-00545-y`](https://doi.org/10.1007/s12065-020-00545-y), Evolutionary Intelligence, Jan 2021. [Download PDF :newspaper:](https://abdelhakbougouffa.pro/pdf/2021-PSO-Scan-Matching.pdf)
+
+[^conf]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, [`10.1109/ICARCV50220.2020.9305519`](https://doi.org/10.1109/ICARCV50220.2020.9305519), 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020. [Download PDF :newspaper:](https://abdelhakbougouffa.pro/pdf/2020-NDT-PSO.pdf)
