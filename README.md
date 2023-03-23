@@ -12,8 +12,8 @@ Abdelhak BOUGOUFFA
 <`abdelhak [dot] bougouffa [at] universite-paris-saclay.fr`>
 
 ### If you used this work, please cite:
-- **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _Particle Swarm Optimization for Solving a Scan-Matching Problem Based on the Normal Distributions Transform_, [`10.1007/s12065-020-00545-y`](https://doi.org/10.1007/s12065-020-00545-y), Evolutionary Intelligence, Jan 2021. [Download PDF ⏬](https://abdelhakbougouffa.pro/pdf/2021-PSO-Scan-Matching.pdf)
-- **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, [`10.1109/ICARCV50220.2020.9305519`](https://doi.org/10.1109/ICARCV50220.2020.9305519), 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020. [Download PDF ⏬](https://abdelhakbougouffa.pro/pdf/2020-NDT-PSO.pdf)
+- **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _Particle Swarm Optimization for Solving a Scan-Matching Problem Based on the Normal Distributions Transform_, [`10.1007/s12065-020-00545-y`](https://doi.org/10.1007/s12065-020-00545-y), Evolutionary Intelligence, Jan 2021. [Download PDF ⏬](https://abougouffa.github.io/pdf/2021-PSO-Scan-Matching.pdf)
+- **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, [`10.1109/ICARCV50220.2020.9305519`](https://doi.org/10.1109/ICARCV50220.2020.9305519), 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020. [Download PDF ⏬](https://abougouffa.github.io/pdf/2020-NDT-PSO.pdf)
 
 # Build NDTPSO-SLAM
 This package has been tested on ROS Melodic and ROS Noetic
@@ -38,6 +38,6 @@ You can edit the provided launch files to fit your LiDAR topic name and run:
 roslaunch ndtpso_slam scan.launch
 ```
 
-[^art]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _Particle Swarm Optimization for Solving a Scan-Matching Problem Based on the Normal Distributions Transform_, [`10.1007/s12065-020-00545-y`](https://doi.org/10.1007/s12065-020-00545-y), Evolutionary Intelligence, Jan 2021. [Download PDF](https://abdelhakbougouffa.pro/pdf/2021-PSO-Scan-Matching.pdf)
+[^art]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _Particle Swarm Optimization for Solving a Scan-Matching Problem Based on the Normal Distributions Transform_, [`10.1007/s12065-020-00545-y`](https://doi.org/10.1007/s12065-020-00545-y), Evolutionary Intelligence, Jan 2021. [Download PDF](https://abougouffa.github.io/pdf/2021-PSO-Scan-Matching.pdf)
 
-[^conf]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, [`10.1109/ICARCV50220.2020.9305519`](https://doi.org/10.1109/ICARCV50220.2020.9305519), 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020. [Download PDF](https://abdelhakbougouffa.pro/pdf/2020-NDT-PSO.pdf)
+[^conf]: **Sara BOURAINE**, **Abdelhak BOUGOUFFA** and **Ouahiba AZOUAOUI**, _NDT-PSO, a New NDT based SLAM Approach using Particle Swarm Optimization_, [`10.1109/ICARCV50220.2020.9305519`](https://doi.org/10.1109/ICARCV50220.2020.9305519), 16th International Conference on Control, Automation, Robotics and Vision (ICARCV 2020), Dec 2020. [Download PDF](https://abougouffa.github.io/pdf/2020-NDT-PSO.pdf)
